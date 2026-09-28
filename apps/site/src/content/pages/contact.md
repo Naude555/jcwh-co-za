@@ -10,13 +10,12 @@ sections:
     variant: centered
     align: center
   - type: richText
-    body: '<table class="galtable"><tbody><tr><td style="text-align: left;"><h4
-      style="margin-top:0;">Contact Us</h4></td></tr><tr><td><ul
-      style="text-align:left;"><li><strong>Phone</strong> (021)
-      905-8335</li><li><strong>Phone</strong> (021) 905-8843</li><li><strong>Fax</strong> (021)
-      905-7917</li><li><strong>Post</strong> PO Box 963, Kuilsrivier 7580, South
-      Africa</li><li><strong>E-Mail</strong> <a
-      href="mailto:jcwh@mweb.co.za">jcwh@mweb.co.za</a></li></ul></td></tr></tbody></table>'
+    body: |-
+      -   **Phone** (021) 905-8335
+      -   **Phone** (021) 905-8843
+      -   **Fax** (021) 905-7917
+      -   **Post** PO Box 963, Kuilsrivier 7580, South Africa
+      -   **E-Mail** jcwh@mweb.co.za
   - type: contact
     eyebrow: Contact
     heading: Get in touch
@@ -39,5 +38,5 @@ seo:
   noindex: false
 source:
   url: https://www.jcwh.co.za/contact.html
-  scrapedAt: 2026-09-28T07:31:14.809Z
+  scrapedAt: 2026-09-28T07:43:46.031Z
 ---

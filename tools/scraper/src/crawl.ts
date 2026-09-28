@@ -41,6 +41,7 @@ import {
   extractImages,
   extractLinks,
   findMainContent,
+  normaliseWhitespace,
   parseHtml,
   pickImageSrc,
 } from "./extract/content.ts";
@@ -213,6 +214,24 @@ function promoteGalleryThumbnails(pages: ScrapedPage[], logger: Logger): number 
   return promoted;
 }
 
+/**
+ * Drop the page's own first heading when it is what the hero already shows.
+ *
+ * A page whose only heading is "Welcome to Acme" gets that as its hero heading, and
+ * leaving it in the body would print it twice.
+ */
+function stripHeroHeading(content: Cheerio<Element>, heroHeading: string): Cheerio<Element> {
+  const target = heroHeading.trim().toLowerCase();
+  if (!target) return content;
+
+  const first = content.find("h1, h2, h3, h4, h5, h6").first();
+  if (first.length === 0) return content;
+  if (normaliseWhitespace(first.text()).toLowerCase() !== target) return content;
+
+  first.remove();
+  return content;
+}
+
 /** Inline `<style>` blocks plus every linked stylesheet, for brand extraction. */
 async function collectStylesheets(html: string, baseUrl: string, limit = 8): Promise<string[]> {
   const $ = parseHtml(html);
@@ -356,7 +375,7 @@ export function extractPage(
   );
 
   const build = buildSections({
-    content: findMainContent($).clone(),
+    content: stripHeroHeading(findMainContent($).clone(), heroHeading),
     baseUrl: url,
     origin: context.origin,
     jsonLd,

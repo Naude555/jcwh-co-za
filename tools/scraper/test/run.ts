@@ -398,6 +398,21 @@ async function main(): Promise<void> {
     JSON.stringify(legacyCrawl.pages.find((page) => page.path === "/p1")?.warnings ?? []),
   );
 
+  check(
+    "layout tables are unwrapped into prose",
+    legacyCrawl.pages.every((page) => !page.markdown.includes("<table")),
+    JSON.stringify(
+      legacyCrawl.pages
+        .filter((page) => page.markdown.includes("<table"))
+        .map((page) => page.path),
+    ),
+  );
+  check(
+    "the hero heading is not repeated in the body",
+    !(legacyHome?.markdown ?? "").includes("Welcome to Legacy Joinery"),
+    (legacyHome?.markdown ?? "").slice(0, 120),
+  );
+
   /* ---- Results -------------------------------------------------------- */
   const failures = checks.filter((entry) => !entry.passed);
   for (const entry of checks) {

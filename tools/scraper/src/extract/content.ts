@@ -70,6 +70,18 @@ function wrap(scope: Cheerio<Element>, element: Element): Cheerio<Element> {
   return scope.find(element as never) as unknown as Cheerio<Element>;
 }
 
+/** Replace a layout table with its contents, so its text reads as normal prose. */
+function unwrapTable(table: Cheerio<Element>): void {
+  const cells = table.find("td, th");
+  cells.each((_, cell) => {
+    const cellNode = wrap(table, cell as Element);
+    cellNode.contents().each((__, child) => {
+      table.before(child as never);
+    });
+  });
+  table.remove();
+}
+
 /**
  * Tidy tables before conversion.
  *
@@ -90,7 +102,13 @@ function promoteTableHeaders(root: Cheerio<Element>): void {
       const count = wrap(table, row as Element).children("td, th").length;
       if (count > widest) widest = count;
     });
-    if (widest < 2) return;
+
+    // A single column is table-based page layout, not data: unwrap it so the text
+    // becomes ordinary prose instead of being kept as raw HTML.
+    if (widest < 2) {
+      if (table.find("td, th").length > 0) unwrapTable(table);
+      return;
+    }
 
     // The header is the first full-width row with no colspans.
     let headerRow: Element | null = null;
