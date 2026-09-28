@@ -37,20 +37,23 @@ Runtime: 23 pages, 46 assets (5.1 MB), 0 assets left remote, 23 redirects genera
 
 ## Open questions for the client
 
-- [ ] **The 19 `/p1`–`/p20` pages.** Each is one photo and a back link, and they all
-      share the same title in the old site. Recommended: fold them into `/gallery`
-      and 301 them there. The report flags every one of them.
+- [x] **The 19 `/p1`–`/p20` pages — resolved.** `--fold-galleries` retired them: they
+      are no longer built, and `/p1.html` … `/p20.html` 301 to `/gallery` (19
+      redirects in `_redirects`). The full-size photos live in the gallery now, and
+      the home page features the first six with a "See all photos" button.
 - [ ] **Photo captions.** The gallery images only have numeric alt text ("1"–"20")
       from the old site. Real alt text is needed for accessibility and SEO.
 - [ ] **Source image quality.** Photos are 600×388 (2010-era). Ask for originals
       before this goes live, or the gallery will look soft on large screens.
-- [ ] **Logo.** There is no logo file — the old header was a CSS background image.
-      The rebuilt site uses a text wordmark. Ask whether they want a real logo.
+- [ ] **Logo.** Your mark is in the header, but `assets/images/logo.svg` is an
+      interim vector drawn from it — swap in your own export (see below).
 - [ ] **Tagline.** Currently "Welcome to JC Wendy Houses Online", lifted from the old
       page's own heading. Worth writing a real one.
 - [ ] **Content depth.** The home page is 196 words and the catalogue has no prices.
       A modernisation is the moment to ask for room, delivery and price information.
-- [ ] **`p14` does not exist** in the old site's numbering (19 photos, not 20).
+- [ ] **`p14` never existed** in the old site's numbering (19 photos, not 20).
+- [ ] **The "See all photos" label** on the home teaser is UI copy the tool wrote.
+      Say the word and it becomes whatever you prefer.
 
 ## Access and permissions
 
@@ -84,6 +87,9 @@ Runtime: 23 pages, 46 assets (5.1 MB), 0 assets left remote, 23 redirects genera
   content, so the home page is a centred text hero. Source fix: `base-v0.1.6`.
 - **Hero buttons.** The home hero links to Catalogue (primary) and Contact Us,
   taken from the site's own navigation — the old site had no buttons of its own.
+- **Gallery.** `--fold-galleries`. The 19 thumbnail detail pages are retired and
+  301'd to `/gallery`; the home page features six photos with a "See all photos"
+  link. The photos themselves are the full-size images from the detail pages.
 - **Logo.** `apps/site/src/assets/images/logo.svg`, applied with
   `--logo assets/images/logo.svg` so a re-crawl cannot drop it.
   **This file is an interim vector drawn from the client's mark — replace it with

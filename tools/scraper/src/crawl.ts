@@ -405,12 +405,13 @@ export function extractPage(
 
   // Pages that are just a photo and a "back" link are gallery detail pages. They
   // migrate fine, but they are usually better folded into the gallery with this
-  // URL redirected — a decision for the review pass, so flag it rather than guess.
-  if (
+  // URL redirected — `--fold-galleries` does exactly that.
+  const galleryDetail =
     wordCount(contentResult.text) < 25 &&
     images.length > 0 &&
-    /\b(back to|previous|next (image|photo)|back to gallery)\b/i.test(contentResult.text)
-  ) {
+    /\b(back to|previous|next (image|photo)|back to gallery)\b/i.test(contentResult.text);
+
+  if (galleryDetail) {
     warnings.push(
       "Looks like a gallery detail page (one image and a back link). Consider folding it into a gallery section and redirecting this URL.",
     );
@@ -435,6 +436,7 @@ export function extractPage(
     socials,
     imageLinks,
     contentImages,
+    galleryDetail,
     ...(meta.publishedAt ? { publishedAt: meta.publishedAt } : {}),
     ...(meta.updatedAt ? { updatedAt: meta.updatedAt } : {}),
     ...(meta.author ? { author: meta.author } : {}),

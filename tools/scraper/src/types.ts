@@ -172,6 +172,7 @@ export type Section =
       subheading?: string;
       columns?: number;
       images: ImageRef[];
+      actions?: Action[];
     }
   | {
       type: "logos";
@@ -298,6 +299,11 @@ export interface ScrapedPage {
    * should use. `images` also holds site chrome such as navigation buttons.
    */
   contentImages: ImageRef[];
+  /**
+   * True when the page looks like a gallery detail stub: one image and a back
+   * link. `--fold-galleries` retires these into the gallery page.
+   */
+  galleryDetail: boolean;
   /**
    * Images that link to another page (thumbnails). Used after the crawl to swap a
    * thumbnail for the larger image on the page it points at.

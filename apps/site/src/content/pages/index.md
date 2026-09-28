@@ -40,11 +40,33 @@ sections:
 
       Use the buttons to the left to browse through our catalogue, view examples in our gallery, or
       to contact us.
+  - type: gallery
+    heading: Gallery
+    columns: 3
+    images:
+      - src: assets/images/1-7acf060c.jpg
+        alt: "1"
+        width: 600
+        height: 388
+      - src: assets/images/2-0ed39778.jpg
+        alt: "2"
+      - src: assets/images/3-23afc2cb.jpg
+        alt: "3"
+      - src: assets/images/4-8464794f.jpg
+        alt: "4"
+      - src: assets/images/5-88a7b5c4.jpg
+        alt: "5"
+      - src: assets/images/6-9c5309e6.jpg
+        alt: "6"
+    actions:
+      - label: See all photos
+        href: /gallery
+        style: outline
 seo:
   title: JC Wendy Houses | Welcome
   description: ""
   noindex: false
 source:
   url: https://www.jcwh.co.za/index.html
-  scrapedAt: 2026-09-28T08:26:06.002Z
+  scrapedAt: 2026-09-28T08:37:16.622Z
 ---

@@ -133,17 +133,141 @@ interface WriteCounts {
   services: number;
 }
 
+/**
+ * Buttons for the home hero, taken from the site's own navigation.
+ *
+ * A scraped home page seldom has hero buttons of its own, which leaves a text-only
+ * hero with no next step. The labels and targets are the site's own top-level
+ * pages, so nothing is invented: the first destination after home, plus contact.
+ */
+function homeHeroActions(crawl: CrawlResult): Action[] {
+  const live = new Set(crawl.pages.map((page) => page.path));
+  const nav = mapNav(crawl.chrome?.navigation ?? [], crawl.origin, live).filter(
+    (item) => item.href.length > 0 && item.href !== "/" && !/^https?:/i.test(item.href),
+  );
+  const primary = nav[0];
+  if (!primary) return [];
+
+  const actions: Action[] = [{ label: primary.label, href: primary.href, style: "primary" }];
+
+  const contact = nav.find((item) => /contact/i.test(`${item.href} ${item.label}`));
+  if (contact && contact.href !== primary.href) {
+    actions.push({ label: contact.label, href: contact.href, style: "outline" });
+  }
+
+  return actions;
+}
+
+/**
+ * Pages that only exist to show one photo.
+ *
+ * A classic gallery is a grid of thumbnails linking to stub pages that hold the
+ * full-size image. Once the gallery section carries those images the stubs are
+ * noise: they are dropped and 301'd to the gallery, which is what a visitor and a
+ * search engine should have reached in the first place.
+ */
+export function retireGalleryStubs(crawl: CrawlResult): Map<string, string> {
+  // Which page's gallery holds each image?
+  const galleryOwner = new Map<string, string>();
+  for (const page of crawl.pages) {
+    for (const section of page.sections) {
+      if (section.type !== "gallery") continue;
+      for (const image of section.images) {
+        if (!galleryOwner.has(image.src)) galleryOwner.set(image.src, page.path);
+      }
+    }
+  }
+
+  const retired = new Map<string, string>();
+  for (const page of crawl.pages) {
+    if (!page.galleryDetail || page.kind !== "page") continue;
+
+    const target = page.contentImages
+      .map((image) => galleryOwner.get(image.src))
+      .find((owner) => owner && owner !== page.path);
+
+    if (target) retired.set(page.path, target);
+  }
+
+  return retired;
+}
+
+/** How many of the gallery's images to feature on the home page. */
+const HOME_GALLERY_IMAGES = 6;
+
+/**
+ * Feature the gallery on the home page.
+ *
+ * A home page for a business that sells what it builds should show the work. The
+ * images, the heading and the link target all come from the site's own gallery
+ * page, so nothing is invented.
+ */
+function withHomeGallery(
+  sections: Section[],
+  page: ScrapedPage,
+  crawl: CrawlResult,
+  retired: Map<string, string>,
+): Section[] {
+  if (page.kind !== "home" || sections.some((section) => section.type === "gallery")) {
+    return sections;
+  }
+
+  const host = crawl.pages
+    .filter((candidate) => candidate.kind !== "home" && !retired.has(candidate.path))
+    .map((candidate) => ({
+      page: candidate,
+      gallery: candidate.sections.find((section) => section.type === "gallery"),
+    }))
+    .filter(
+      (entry): entry is { page: ScrapedPage; gallery: Extract<Section, { type: "gallery" }> } =>
+        entry.gallery?.type === "gallery" && entry.gallery.images.length >= 4,
+    )
+    .sort((a, b) => b.gallery.images.length - a.gallery.images.length)[0];
+
+  if (!host) return sections;
+
+  return [
+    ...sections,
+    {
+      type: "gallery",
+      heading: host.gallery.heading || "Gallery",
+      columns: 3,
+      images: host.gallery.images.slice(0, HOME_GALLERY_IMAGES),
+      actions: [{ label: "See all photos", href: host.page.path, style: "outline" }],
+    },
+  ];
+}
+
+/** The page's sections, with the home hero's buttons filled in when it has none. */
+function withHomeHeroActions(page: ScrapedPage, crawl: CrawlResult): Section[] {
+  const hero = page.sections.find((section) => section.type === "hero");
+  if (page.kind !== "home" || !hero || hero.type !== "hero" || (hero.actions?.length ?? 0) > 0) {
+    return page.sections;
+  }
+
+  const actions = homeHeroActions(crawl);
+  if (actions.length === 0) return page.sections;
+
+  return page.sections.map((section) =>
+    section.type === "hero" ? { ...section, actions } : section,
+  );
+}
+
 /** Write the three content collections from the crawl. */
 async function writeContent(
   crawl: CrawlResult,
   options: Options,
   scrapedAt: string,
   logger: Logger,
+  retired: Map<string, string> = new Map(),
 ): Promise<WriteCounts> {
   const contentRoot = join(options.siteDir, "src/content");
   const counts: WriteCounts = { pages: 0, posts: 0, services: 0 };
 
   for (const page of crawl.pages) {
+    // Folded-away stub pages are not written: they become redirects instead.
+    if (retired.has(page.path)) continue;
+
     for (const section of page.sections) localiseSection(section, crawl.origin);
 
     if (page.kind === "post") {
@@ -198,46 +322,6 @@ async function writeContent(
       continue;
     }
 
-    /**
- * Buttons for the home hero, taken from the site's own navigation.
- *
- * A scraped home page seldom has hero buttons of its own, which leaves a text-only
- * hero with no next step. The labels and targets are the site's own top-level
- * pages, so nothing is invented: the first destination after home, plus contact.
- */
-function homeHeroActions(crawl: CrawlResult): Action[] {
-  const live = new Set(crawl.pages.map((page) => page.path));
-  const nav = mapNav(crawl.chrome?.navigation ?? [], crawl.origin, live).filter(
-    (item) => item.href.length > 0 && item.href !== "/" && !/^https?:/i.test(item.href),
-  );
-  const primary = nav[0];
-  if (!primary) return [];
-
-  const actions: Action[] = [{ label: primary.label, href: primary.href, style: "primary" }];
-
-  const contact = nav.find((item) => /contact/i.test(`${item.href} ${item.label}`));
-  if (contact && contact.href !== primary.href) {
-    actions.push({ label: contact.label, href: contact.href, style: "outline" });
-  }
-
-  return actions;
-}
-
-/** The page's sections, with the home hero's buttons filled in when it has none. */
-function withHomeHeroActions(page: ScrapedPage, crawl: CrawlResult): Section[] {
-  const hero = page.sections.find((section) => section.type === "hero");
-  if (page.kind !== "home" || !hero || hero.type !== "hero" || (hero.actions?.length ?? 0) > 0) {
-    return page.sections;
-  }
-
-  const actions = homeHeroActions(crawl);
-  if (actions.length === 0) return page.sections;
-
-  return page.sections.map((section) =>
-    section.type === "hero" ? { ...section, actions } : section,
-  );
-}
-
 const template =
       page.kind === "contact" ? "contact" : page.kind === "legal" ? "legal" : "marketing";
 
@@ -248,7 +332,7 @@ const template =
         description: truncate(page.description, 158),
         template,
         breadcrumbs: [],
-        sections: withHomeHeroActions(page, crawl),
+        sections: withHomeGallery(withHomeHeroActions(page, crawl), page, crawl, retired),
         seo: seoFor(page),
         source: sourceOf(page, scrapedAt),
       }),
@@ -370,7 +454,15 @@ export async function generateSite(
   const scrapedAt = new Date().toISOString();
 
   await resetCollections(options.siteDir, logger);
-  const counts = await writeContent(crawl, options, scrapedAt, logger);
+
+  const retired = options.foldGalleries ? retireGalleryStubs(crawl) : new Map<string, string>();
+  if (retired.size > 0) {
+    logger.info(
+      `Folding ${retired.size} gallery stub page(s) into their galleries and redirecting them`,
+    );
+  }
+
+  const counts = await writeContent(crawl, options, scrapedAt, logger, retired);
 
   await writeJson(join(options.siteDir, "src/data/site.json"), buildSiteConfig(crawl, brand, options, scrapedAt));
   await writeText(
@@ -378,7 +470,7 @@ export async function generateSite(
     renderBrandCss(brand, { sourceUrl: options.url, generatedAt: scrapedAt }),
   );
 
-  const redirects = buildRedirects(crawl);
+  const redirects = buildRedirects(crawl, retired);
   await writeRedirects(options.outDir, redirects);
 
   const finishedAt = Date.now();
@@ -637,14 +729,21 @@ export function buildSiteConfig(
  * Redirects for URLs that changed shape during the crawl — the `.html`/`.php`
  * suffixes a static rebuild drops, in particular. Everything else keeps its path.
  */
-export function buildRedirects(crawl: CrawlResult): RedirectRecord[] {
+export function buildRedirects(
+  crawl: CrawlResult,
+  retired: Map<string, string> = new Map(),
+): RedirectRecord[] {
   const redirects: RedirectRecord[] = [];
 
   for (const page of crawl.pages) {
     const original = new URL(page.url).pathname;
-    const target = page.kind === "post" ? `/posts/${page.id}`
-      : page.kind === "service" ? `/services/${page.id}`
-      : page.path;
+    const target =
+      retired.get(page.path) ??
+      (page.kind === "post"
+        ? `/posts/${page.id}`
+        : page.kind === "service"
+          ? `/services/${page.id}`
+          : page.path);
 
     const needsRedirect =
       /\.(html?|php|aspx?|jsp)$/i.test(original) ||
@@ -652,7 +751,13 @@ export function buildRedirects(crawl: CrawlResult): RedirectRecord[] {
       original.replace(/\/+$/, "") !== target;
 
     if (needsRedirect && original !== target) {
-      redirects.push({ from: original, to: target, reason: "URL shape changed in the rebuild" });
+      redirects.push({
+        from: original,
+        to: target,
+        reason: retired.has(page.path)
+          ? "Photo folded into the gallery"
+          : "URL shape changed in the rebuild",
+      });
     }
   }
 

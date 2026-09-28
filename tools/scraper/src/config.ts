@@ -41,6 +41,11 @@ export interface Options {
    * A supplied logo survives re-crawls, unlike editing `site.json` by hand.
    */
   logo: string | null;
+  /**
+   * Treat thumbnail → detail-page galleries as one gallery: feature a few images
+   * on the home page, and retire the detail stubs with redirects.
+   */
+  foldGalleries: boolean;
 }
 
 export type Command = "scrape" | "generate" | "modernize" | "help";
@@ -63,6 +68,7 @@ export const DEFAULTS: Omit<
   downloadAssets: true,
   maxAssetBytes: 4 * 1024 * 1024,
   themeMode: "auto",
+  foldGalleries: false,
   respectRobots: true,
   verbose: false,
   fromCache: false,
@@ -91,6 +97,8 @@ Options
       --max-asset-kb <n> Skip assets larger than this  (default ${DEFAULTS.maxAssetBytes / 1024} kB)
       --theme <mode>     light | auto                 (default ${DEFAULTS.themeMode})
       --logo <path>      Logo file inside the app      (e.g. assets/images/logo.svg)
+      --fold-galleries   Feature the gallery on the home page and 301 the
+                         thumbnail detail pages into it
       --ignore-robots    Do not honour robots.txt
       --from-cache       Reuse the previous crawl of this site
   -v, --verbose          Extra detail
@@ -165,6 +173,9 @@ export function parseArgs(argv: string[]): ParsedArgs {
         break;
       case "--theme":
         options.themeMode = next(arg) === "light" ? "light" : "auto";
+        break;
+      case "--fold-galleries":
+        options.foldGalleries = true;
         break;
       case "--logo":
         options.logo = next(arg);

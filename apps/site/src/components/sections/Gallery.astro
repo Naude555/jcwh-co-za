@@ -2,13 +2,21 @@
 import Section from "../Section.astro";
 import SectionHeading from "../SectionHeading.astro";
 import SmartImage from "../SmartImage.astro";
+import Button from "../Button.astro";
 import { slugify } from "../../utils/url";
 import type { SectionOf } from "./types";
 
 /** Responsive image grid. */
 type Props = SectionOf<"gallery">;
 
-const { eyebrow, heading, subheading, columns = 3, images = [] } = Astro.props;
+const {
+  eyebrow,
+  heading,
+  subheading,
+  columns = 3,
+  images = [],
+  actions = [],
+} = Astro.props;
 
 const colClass =
   columns === 1
@@ -37,4 +45,21 @@ const colClass =
       ))
     }
   </ul>
+
+  {
+    actions.length > 0 && (
+      <div class="mt-10 flex flex-wrap justify-center gap-3">
+        {actions.map((action, index) => (
+          <Button
+            href={action.href}
+            style={action.style ?? (index === 0 ? "primary" : "outline")}
+            icon={action.icon}
+            external={action.icon === "external"}
+          >
+            {action.label}
+          </Button>
+        ))}
+      </div>
+    )
+  }
 </Section>

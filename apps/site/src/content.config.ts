@@ -129,6 +129,8 @@ const section = z.discriminatedUnion("type", [
     ...heading,
     columns: columns(3),
     images: z.array(image).default([]),
+    /** Optional "see all" style links, e.g. to the full gallery page. */
+    actions: z.array(action).default([]),
   }),
   z.object({
     type: z.literal("logos"),

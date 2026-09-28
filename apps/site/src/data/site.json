@@ -3,7 +3,7 @@
   "legalName": "",
   "tagline": "Welcome to JC Wendy Houses Online",
   "description": "Welcome to JC Wendy Houses Online",
-  "url": "https://www.jcwh.co.za",
+  "url": "https://www.jcwh.co.za/index.html",
   "locale": "en",
   "logo": {
     "src": "assets/images/logo.svg",
@@ -88,8 +88,8 @@
     }
   },
   "source": {
-    "url": "https://www.jcwh.co.za",
-    "scrapedAt": "2026-09-28T08:26:06.002Z",
+    "url": "https://www.jcwh.co.za/index.html",
+    "scrapedAt": "2026-09-28T08:37:16.622Z",
     "pagesMigrated": 23
   }
 }

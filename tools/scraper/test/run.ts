@@ -297,6 +297,9 @@ async function main(): Promise<void> {
     url: legacyServer.url,
     outDir: join(root, "legacy/output"),
     siteDir: join(root, "legacy/site"),
+    // Exercise the optional gallery folding: a home page teaser plus stubs 301'd
+    // into the gallery.
+    foldGalleries: true,
   };
   await makeSiteDirs(legacyOptions.siteDir);
 
@@ -371,6 +374,35 @@ async function main(): Promise<void> {
   const legacyHomeMarkdown = await readFile(
     join(legacyOptions.siteDir, "src/content/pages/index.md"),
     "utf8",
+  );
+  const legacyGalleryMarkdown = await readFile(
+    join(legacyOptions.siteDir, "src/content/pages/gallery.md"),
+    "utf8",
+  );
+  const legacyRedirects = JSON.parse(
+    await readFile(join(root, "legacy/output/redirects.json"), "utf8"),
+  ) as { from: string; to: string }[];
+
+  check(
+    "the home page features the gallery and links to it",
+    legacyHomeMarkdown.includes("- type: gallery") &&
+      legacyHomeMarkdown.includes("See all photos") &&
+      legacyHomeMarkdown.includes("href: /gallery"),
+    legacyHomeMarkdown.split("- type: gallery")[1]?.trim().slice(0, 140) ?? "no gallery section",
+  );
+  check(
+    "the gallery page keeps all of its photos",
+    (legacyGalleryMarkdown.match(/- src:/g) ?? []).length >= 4,
+    `${(legacyGalleryMarkdown.match(/- src:/g) ?? []).length} image(s)`,
+  );
+  check(
+    "thumbnail stub pages are folded away",
+    !(await exists(join(legacyOptions.siteDir, "src/content/pages/p1.md"))),
+  );
+  check(
+    "folded pages 301 to the gallery",
+    legacyRedirects.some((entry) => entry.from === "/p1.html" && entry.to === "/gallery"),
+    JSON.stringify(legacyRedirects.filter((entry) => /^\/p\d/.test(entry.from))),
   );
   check(
     "the home hero links on using the site's own navigation",

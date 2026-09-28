@@ -12,4 +12,19 @@
   <url>
     <loc>http://127.0.0.1:PORT/p1.html</loc>
   </url>
+  <url>
+    <loc>http://127.0.0.1:PORT/gallery.html</loc>
+  </url>
+  <url>
+    <loc>http://127.0.0.1:PORT/p1.html</loc>
+  </url>
+  <url>
+    <loc>http://127.0.0.1:PORT/p2.html</loc>
+  </url>
+  <url>
+    <loc>http://127.0.0.1:PORT/p3.html</loc>
+  </url>
+  <url>
+    <loc>http://127.0.0.1:PORT/p4.html</loc>
+  </url>
 </urlset>
