@@ -12,6 +12,15 @@
   "notes": "Tooling synced to base-v0.1.1 after the first crawl exposed legacy-markup gaps.",
   "runs": [
     {
+      "at": "2026-09-28T10:19:54.087Z",
+      "command": "generate",
+      "status": "generated",
+      "pages": 4,
+      "posts": 0,
+      "services": 0,
+      "redirects": 23
+    },
+    {
       "at": "2026-09-28T09:01:18.231Z",
       "command": "modernize",
       "status": "generated",
@@ -154,15 +163,6 @@
       "command": "modernize",
       "status": "crawled",
       "pages": 23
-    },
-    {
-      "at": "2026-09-28T07:17:34.336Z",
-      "command": "modernize",
-      "status": "generated",
-      "pages": 23,
-      "posts": 0,
-      "services": 0,
-      "redirects": 23
     }
   ]
 }
