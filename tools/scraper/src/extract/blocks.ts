@@ -443,6 +443,34 @@ function galleryImages(scope: Cheerio<Element>, baseUrl: string): ImageRef[] {
 }
 
 /**
+ * Remove the contact rows the contact block will render anyway.
+ *
+ * A contact page normally lists phone, fax, email and address as plain list items.
+ * The block renders phone and email as tel:/mailto: links and the address in full,
+ * so leaving the originals in the prose prints everything twice.
+ */
+function stripClaimedContactRows(scope: Cheerio<Element>, rows: ContactDetail[]): void {
+  const values = rows
+    .map((row) => normaliseWhitespace(row.value).toLowerCase())
+    .filter((value) => value.length > 4);
+  if (values.length === 0) return;
+
+  // A hard label at the start of a short line is a contact row too: a fax number,
+  // for example, has no row of its own in the block.
+  const labelled =
+    /^(?:phone|telephone|tel|fax|facsimile|cell|cellphone|mobile|whatsapp|e-?mail)\b/i;
+
+  scope.find("li, p, dd, address").each((_, element) => {
+    const node = wrap(scope, element as Element);
+    const text = normaliseWhitespace(node.text());
+    if (text.length === 0 || text.length > 200) return;
+
+    const lower = text.toLowerCase();
+    if (values.some((value) => lower.includes(value)) || labelled.test(text)) node.remove();
+  });
+}
+
+/**
  * Compose a page from the blocks found in its markup.
  *
  * Each extractor runs against the live content node and, when it succeeds, the
@@ -556,6 +584,11 @@ export function buildSections(context: BuildContext): BuildResult {
     blockTypes.push("faq");
     scope.find("details").remove();
     byKeyword(scope, ["faq", "accordion"]).remove();
+  }
+
+  // --- Contact rows belong to the contact block, not the prose ------------
+  if (context.kind === "contact" && context.contactRows.length > 0) {
+    stripClaimedContactRows(scope, context.contactRows);
   }
 
   // --- Whatever is left becomes prose ------------------------------------

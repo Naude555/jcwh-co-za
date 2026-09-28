@@ -4,6 +4,7 @@ import SectionHeading from "../SectionHeading.astro";
 import SmartImage from "../SmartImage.astro";
 import Button from "../Button.astro";
 import { slugify } from "../../utils/url";
+import { assetUrl } from "../../utils/assets";
 import type { SectionOf } from "./types";
 
 /** Responsive image grid. */
@@ -33,16 +34,31 @@ const colClass =
 
   <ul class:list={["mt-12 grid gap-4", colClass]}>
     {
-      images.map((image, index) => (
-        <li class="overflow-hidden rounded-box bg-base-200 reveal-on-scroll">
-          <SmartImage
-            src={image.src}
-            alt={image.alt || `${heading ?? "Gallery image"} ${index + 1}`}
-            class="aspect-4/3 w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
-            sizes="(min-width: 1024px) 24rem, (min-width: 640px) 45vw, 90vw"
-          />
-        </li>
-      ))
+      images.map((image, index) => {
+        const alt = image.alt || `${heading ?? "Gallery image"} ${index + 1}`;
+        // The full-size file the thumbnail links to. With JS the lightbox opens it;
+        // without JS the browser just opens the image.
+        const full = assetUrl(image.src) ?? image.src;
+
+        return (
+          <li class="overflow-hidden rounded-box bg-base-200 reveal-on-scroll">
+            <a
+              href={full}
+              data-lightbox
+              data-alt={alt}
+              class="block cursor-zoom-in"
+              aria-label={`View image ${index + 1} full size`}
+            >
+              <SmartImage
+                src={image.src}
+                alt={alt}
+                class="aspect-4/3 w-full object-cover transition-transform duration-500 hover:scale-[1.03]"
+                sizes="(min-width: 1024px) 24rem, (min-width: 640px) 45vw, 90vw"
+              />
+            </a>
+          </li>
+        );
+      })
     }
   </ul>
 

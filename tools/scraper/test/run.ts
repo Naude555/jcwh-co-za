@@ -452,6 +452,15 @@ async function main(): Promise<void> {
     JSON.stringify(legacyCrawl.pages.find((page) => page.path === "/p1")?.warnings ?? []),
   );
 
+  const legacyContactMarkdown = legacyCrawl.pages.find((page) => page.path === "/contact")?.markdown ?? "";
+  check(
+    "contact details are not duplicated into the prose",
+    !legacyContactMarkdown.includes("(021) 555-1234") &&
+      !legacyContactMarkdown.includes("PO Box 1234") &&
+      !legacyContactMarkdown.includes("info@legacyjoinery.example"),
+    legacyContactMarkdown.trim().slice(0, 120) || "(prose is empty, as intended)",
+  );
+
   check(
     "layout tables are unwrapped into prose",
     legacyCrawl.pages.every((page) => !page.markdown.includes("<table")),

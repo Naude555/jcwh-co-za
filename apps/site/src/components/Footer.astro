@@ -131,7 +131,21 @@ const year = new Date().getFullYear();
         {site.footer.legal ? ` · ${site.footer.legal}` : ""}
       </p>
       <p class="opacity-50">
-        {site.footer.credit || "Rebuilt with Astro, Tailwind CSS and daisyUI."}
+        {
+          site.footer.credit &&
+            (site.footer.creditUrl ? (
+              <a
+                href={site.footer.creditUrl}
+                class="link-underline"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                {site.footer.credit}
+              </a>
+            ) : (
+              site.footer.credit
+            ))
+        }
       </p>
     </div>
 

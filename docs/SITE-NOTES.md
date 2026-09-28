@@ -95,6 +95,17 @@ Runtime: 23 pages, 46 assets (5.1 MB), 0 assets left remote, 23 redirects genera
   **This file is an interim vector drawn from the client's mark — replace it with
   their own export** (see below).
 - **Favicon.** `apps/site/public/favicon.svg`, the house mark on the cream tint.
+- **Icons.** `apps/site/public/favicon.svg` (house mark) plus the PNG set generated
+  from it with `pnpm icons`: `favicon-32x32.png`, `apple-touch-icon.png`,
+  `icon-192.png`, `icon-512.png`. Regenerate whenever the mark changes.
+- **Gallery lightbox.** Thumbnails open at full size in a native `<dialog>`, with a
+  small inline script — no library, and without JavaScript the link still opens the
+  image file.
+- **Contact page.** Trimmed to hero + contact block: the tool now removes the
+  phone/fax/email/address list from the prose once the block renders it, so nothing
+  is printed twice.
+- **Attribution.** Footer reads "Built by eptsolution.com", linked. Change
+  `footer.credit` / `footer.creditUrl` in `src/data/site.json` to change it.
 - **Palette** (unchanged, from the old stylesheet): primary
   `oklch(41.4% .0727 63.3)` = the link brown `#67421D`; surfaces from
   `#d8bd89` / `#E7D5B4`.

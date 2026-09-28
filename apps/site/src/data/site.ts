@@ -81,6 +81,8 @@ const siteSchema = z.object({
       .default([]),
     legal: z.string().default(""),
     credit: z.string().default(""),
+    /** Where the credit line links, e.g. the studio that built the site. */
+    creditUrl: z.string().default(""),
   }),
 
   theme: z.object({

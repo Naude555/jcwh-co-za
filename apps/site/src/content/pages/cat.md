@@ -73,5 +73,5 @@ seo:
   noindex: false
 source:
   url: https://www.jcwh.co.za/cat.html
-  scrapedAt: 2026-09-28T08:37:16.622Z
+  scrapedAt: 2026-09-28T09:01:18.217Z
 ---

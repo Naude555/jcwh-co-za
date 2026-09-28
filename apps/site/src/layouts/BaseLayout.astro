@@ -72,6 +72,11 @@ const themeToggleScript = isLightOnly
   ? null
   : `(function(){var k="theme",r=document.documentElement,L="${light}",D="${dark}";var b=document.querySelectorAll("[data-theme-toggle]");function sync(){var dark=r.dataset.theme===D;b.forEach(function(t){t.setAttribute("aria-pressed",String(dark));t.setAttribute("aria-label",dark?"Switch to light theme":"Switch to dark theme");});}b.forEach(function(t){t.addEventListener("click",function(){var n=r.dataset.theme===D?L:D;r.dataset.theme=n;try{localStorage.setItem(k,n);}catch(e){}sync();});});sync();})();`;
 
+/* Gallery lightbox: one delegated listener, so every [data-lightbox] link on the
+   page works — including ones rendered later. Without JS the link still opens the
+   full-size image, so nothing is lost. */
+const lightboxScript = `(function(){var d=document.getElementById("lightbox");if(!d||typeof d.showModal!=="function")return;var i=d.querySelector("[data-lightbox-image]");document.addEventListener("click",function(e){var a=e.target.closest("[data-lightbox]");if(!a)return;var href=a.getAttribute("href");if(!href)return;e.preventDefault();i.src=href;i.alt=a.getAttribute("data-alt")||"";d.showModal();});if(i){i.addEventListener("click",function(){d.close();});}d.addEventListener("close",function(){i.removeAttribute("src");i.alt="";});})();`;
+
 const defaultSchema = [
   {
     "@context": "https://schema.org",
@@ -108,6 +113,8 @@ const schema = [...defaultSchema, ...(structuredData ? [structuredData].flat() :
     <link rel="canonical" href={canonicalUrl} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
     <meta property="og:type" content={type} />
@@ -154,6 +161,31 @@ const schema = [...defaultSchema, ...(structuredData ? [structuredData].flat() :
     </main>
     <Footer />
 
+    {
+      /* Lightbox for gallery images. Native <dialog> needs no library, and the
+         markup is inert on pages without images. */
+    }
+    <dialog
+      id="lightbox"
+      class="modal"
+      aria-label="Image viewer"
+      data-lightbox-dialog
+    >
+      <div class="modal-box max-w-6xl bg-transparent p-0 shadow-none">
+        <img
+          id="lightbox-image"
+          src=""
+          alt=""
+          class="mx-auto max-h-[80vh] w-auto cursor-zoom-out rounded-box"
+          data-lightbox-image
+        />
+      </div>
+      <form method="dialog" class="modal-backdrop">
+        <button aria-label="Close image viewer">close</button>
+      </form>
+    </dialog>
+
     {themeToggleScript && <script is:inline set:html={themeToggleScript} />}
+    <script is:inline set:html={lightboxScript} />
   </body>
 </html>

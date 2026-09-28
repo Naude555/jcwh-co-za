@@ -708,7 +708,8 @@ export function buildSiteConfig(
       tagline: "",
       columns: footerColumns,
       legal: legalMatch ? legalMatch[0].trim().slice(0, 160) : "",
-      credit: "Rebuilt with Astro, Tailwind CSS and daisyUI.",
+      credit: "Built by eptsolution.com",
+      creditUrl: "https://eptsolution.com",
     },
     theme: {
       mode: options.themeMode,

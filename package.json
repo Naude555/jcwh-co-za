@@ -13,6 +13,7 @@
     "build": "pnpm --filter ./apps/site build",
     "preview": "pnpm --filter ./apps/site preview",
     "check": "pnpm --filter ./apps/site check && pnpm --filter ./tools/scraper typecheck",
+    "icons": "node apps/site/scripts/generate-icons.mjs",
     "test": "pnpm --filter ./tools/scraper test",
     "scrape": "node --env-file-if-exists=.env tools/scraper/src/cli.ts scrape",
     "generate": "node --env-file-if-exists=.env tools/scraper/src/cli.ts generate",
