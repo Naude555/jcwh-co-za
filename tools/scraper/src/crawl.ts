@@ -39,6 +39,7 @@ import {
 import {
   extractContent,
   extractImages,
+  extractImagesIn,
   extractLinks,
   findMainContent,
   normaliseWhitespace,
@@ -119,6 +120,10 @@ async function localiseAssets(page: ScrapedPage, store: AssetStore): Promise<num
   page.imageLinks = page.imageLinks.map((link) => ({
     ...link,
     src: mapping.get(link.src) ?? link.src,
+  }));
+  page.contentImages = page.contentImages.map((image) => ({
+    ...image,
+    src: mapping.get(image.src) ?? image.src,
   }));
 
   for (const section of page.sections as Section[]) {
@@ -366,8 +371,11 @@ export function extractPage(
     (firstHeading && firstHeading.text.length >= 8 ? firstHeading.text : undefined) ??
     dropSiteName(meta.title, identity.name);
 
-  // Hero image: the first plausible, non-logo content image.
-  const heroImage = images.find(
+  // Hero image: the first plausible, non-logo image *in the page's content*.
+  // Images from the site chrome (navigation buttons, banner strips) must never be
+  // used here — stretched across a hero they look like an accident.
+  const contentImages = extractImagesIn(findMainContent($), url);
+  const heroImage = contentImages.find(
     (image) =>
       image.src !== logo?.src &&
       !/logo|icon|sprite|avatar/i.test(image.src) &&
@@ -426,6 +434,7 @@ export function extractPage(
     contact,
     socials,
     imageLinks,
+    contentImages,
     ...(meta.publishedAt ? { publishedAt: meta.publishedAt } : {}),
     ...(meta.updatedAt ? { updatedAt: meta.updatedAt } : {}),
     ...(meta.author ? { author: meta.author } : {}),

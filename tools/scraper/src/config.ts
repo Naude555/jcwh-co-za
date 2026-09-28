@@ -26,10 +26,21 @@ export interface Options {
   include: string | null;
   /** Never crawl URLs matching these patterns (regex sources). */
   exclude: string[];
+  /**
+   * `auto` follows the visitor's system colour scheme and shows the toggle;
+   * `light` builds a light-only site (no dark palette, no toggle).
+   */
+  themeMode: "auto" | "light";
   respectRobots: boolean;
   verbose: boolean;
   /** Regenerate content from an existing crawl instead of re-crawling. */
   fromCache: boolean;
+  /**
+   * Site-relative path to the logo to use (e.g. `assets/images/logo.svg`).
+   *
+   * A supplied logo survives re-crawls, unlike editing `site.json` by hand.
+   */
+  logo: string | null;
 }
 
 export type Command = "scrape" | "generate" | "modernize" | "help";
@@ -39,7 +50,10 @@ export interface ParsedArgs {
   options: Options;
 }
 
-export const DEFAULTS: Omit<Options, "url" | "outDir" | "include" | "exclude"> = {
+export const DEFAULTS: Omit<
+  Options,
+  "url" | "outDir" | "include" | "exclude" | "logo"
+> = {
   siteDir: "apps/site",
   maxPages: 60,
   maxDepth: 4,
@@ -48,6 +62,7 @@ export const DEFAULTS: Omit<Options, "url" | "outDir" | "include" | "exclude"> =
   render: false,
   downloadAssets: true,
   maxAssetBytes: 4 * 1024 * 1024,
+  themeMode: "auto",
   respectRobots: true,
   verbose: false,
   fromCache: false,
@@ -74,6 +89,8 @@ Options
       --render           Render JavaScript (needs: pnpm --filter scraper browsers)
       --no-assets        Do not download images
       --max-asset-kb <n> Skip assets larger than this  (default ${DEFAULTS.maxAssetBytes / 1024} kB)
+      --theme <mode>     light | auto                 (default ${DEFAULTS.themeMode})
+      --logo <path>      Logo file inside the app      (e.g. assets/images/logo.svg)
       --ignore-robots    Do not honour robots.txt
       --from-cache       Reuse the previous crawl of this site
   -v, --verbose          Extra detail
@@ -100,6 +117,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     outDir: "",
     include: null,
     exclude: [],
+    logo: null,
     ...DEFAULTS,
   };
 
@@ -144,6 +162,12 @@ export function parseArgs(argv: string[]): ParsedArgs {
         break;
       case "--exclude":
         options.exclude.push(next(arg));
+        break;
+      case "--theme":
+        options.themeMode = next(arg) === "light" ? "light" : "auto";
+        break;
+      case "--logo":
+        options.logo = next(arg);
         break;
       case "--render":
         options.render = true;

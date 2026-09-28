@@ -67,6 +67,7 @@ async function main(): Promise<void> {
     delayMs: 0,
     include: null,
     exclude: [],
+    logo: null,
   };
 
   const logger = createLogger(false);
@@ -156,6 +157,11 @@ async function main(): Promise<void> {
     "hero actions come from the CTA buttons",
     hero?.type === "hero" && (hero.actions ?? []).length >= 1,
     hero?.type === "hero" ? JSON.stringify((hero.actions ?? []).map((a) => a.label)) : "",
+  );
+  check(
+    "a hero image inside the content is still used",
+    hero?.type === "hero" && Boolean(hero.image),
+    hero?.type === "hero" ? JSON.stringify(hero.image?.src ?? null) : "",
   );
   check(
     "hero markup is not duplicated into the prose",
@@ -356,6 +362,22 @@ async function main(): Promise<void> {
     "hero heading falls back to an <h4> when there is no <h1>",
     legacyHero?.type === "hero" && legacyHero.heading === "Welcome to Legacy Joinery",
     legacyHero?.type === "hero" ? legacyHero.heading : "no hero",
+  );
+  check(
+    "chrome images never become the hero image",
+    !(legacyHero?.type === "hero" && legacyHero.image),
+    legacyHero?.type === "hero" ? JSON.stringify(legacyHero.image ?? null) : "no hero",
+  );
+  const legacyHomeMarkdown = await readFile(
+    join(legacyOptions.siteDir, "src/content/pages/index.md"),
+    "utf8",
+  );
+  check(
+    "the home hero links on using the site's own navigation",
+    legacyHomeMarkdown.includes("- type: hero") &&
+      legacyHomeMarkdown.includes("href: /cat") &&
+      legacyHomeMarkdown.includes("href: /contact"),
+    legacyHomeMarkdown.split("sections:")[1]?.trim().slice(0, 160) ?? "no sections",
   );
   check(
     "table caption rows are lifted out of the Markdown table",

@@ -3,10 +3,11 @@ import Icon from "./Icon.astro";
 import Button from "./Button.astro";
 import SmartImage from "./SmartImage.astro";
 import ThemeToggle from "./ThemeToggle.astro";
-import { site, logoText, hasLogo } from "../data/site";
+import { site, logoText, hasLogo, lightOnly } from "../data/site";
 
 const nav = site.navigation.primary ?? [];
 const actions = site.navigation.actions ?? [];
+const showThemeToggle = !lightOnly();
 
 /** Compare link targets to the current path, ignoring trailing slashes. */
 const current = Astro.url.pathname.replace(/\/+$/, "") || "/";
@@ -84,7 +85,7 @@ const isCurrent = (href: string) => (href.replace(/\/+$/, "") || "/") === curren
     </nav>
 
     <div class="flex items-center gap-1 lg:gap-2">
-      <ThemeToggle />
+      {showThemeToggle && <ThemeToggle />}
 
       {
         actions.length > 0 && (

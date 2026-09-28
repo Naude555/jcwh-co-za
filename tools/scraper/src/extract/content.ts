@@ -353,12 +353,12 @@ export function pickImageSrc(element: Element): string | null {
   return null;
 }
 
-/** All content images on the page, resolved to absolute URLs. */
-export function extractImages($: CheerioAPI, baseUrl: string): ImageRef[] {
+/** Collect images from a selection, resolved to absolute URLs. */
+function collectImages(selection: Cheerio<Element>, baseUrl: string): ImageRef[] {
   const images: ImageRef[] = [];
   const seen = new Set<string>();
 
-  $("img").each((_, element) => {
+  selection.each((_, element) => {
     const el = element as Element;
     const raw = pickImageSrc(el);
     if (!raw) return;
@@ -385,7 +385,20 @@ export function extractImages($: CheerioAPI, baseUrl: string): ImageRef[] {
   return images;
 }
 
-/** All anchors on the page, split into internal and external. */
+/** All images on the page, including site chrome. */
+export function extractImages($: CheerioAPI, baseUrl: string): ImageRef[] {
+  return collectImages($("img"), baseUrl);
+}
+
+/**
+ * Images inside one node — the page's main content.
+ *
+ * This is what a hero image or a social card should use: chrome images such as
+ * navigation buttons must never be mistaken for content.
+ */
+export function extractImagesIn(scope: Cheerio<Element>, baseUrl: string): ImageRef[] {
+  return collectImages(scope.find("img"), baseUrl);
+}
 export function extractLinks($: CheerioAPI, baseUrl: string, origin: string): PageLink[] {
   const links: PageLink[] = [];
   const seen = new Set<string>();

@@ -294,6 +294,11 @@ export interface ScrapedPage {
   /** Social links found on this page, merged site-wide by the generator. */
   socials: { label: string; href: string }[];
   /**
+   * Images inside the page's main content, which is what a hero or a social card
+   * should use. `images` also holds site chrome such as navigation buttons.
+   */
+  contentImages: ImageRef[];
+  /**
    * Images that link to another page (thumbnails). Used after the crawl to swap a
    * thumbnail for the larger image on the page it points at.
    */

@@ -70,9 +70,8 @@ sections:
 seo:
   title: JC Wendy Houses | Catalogue
   description: ""
-  image: assets/images/home-8df10ca2.jpg
   noindex: false
 source:
   url: https://www.jcwh.co.za/cat.html
-  scrapedAt: 2026-09-28T07:43:46.031Z
+  scrapedAt: 2026-09-28T08:26:06.002Z
 ---

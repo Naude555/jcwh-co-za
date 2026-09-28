@@ -3,7 +3,7 @@ import { Font } from "astro:assets";
 import "../styles/global.css";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
-import { site, absoluteUrl } from "../data/site";
+import { site, absoluteUrl, lightOnly } from "../data/site";
 
 /**
  * Base document shell: SEO metadata, structured data, the pre-paint theme
@@ -60,11 +60,17 @@ const ogImage = image
 const useRemoteFonts = import.meta.env.PUBLIC_REMOTE_FONTS !== "0";
 const light = site.theme.light;
 const dark = site.theme.dark;
+const isLightOnly = lightOnly();
 
-/* Applied before first paint; the toggle in the header only changes this state. */
-const themeInitScript = `(function(){try{var k="theme";var s=localStorage.getItem(k);var d=window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.dataset.theme=s||(d?"${dark}":"${light}");}catch(e){}})();`;
+/* Applied before first paint, so there is no flash of the wrong theme. A
+   light-only build drops any stored preference and pins the light palette. */
+const themeInitScript = isLightOnly
+  ? `(function(){try{localStorage.removeItem("theme");}catch(e){}document.documentElement.dataset.theme="${light}";})();`
+  : `(function(){try{var k="theme";var s=localStorage.getItem(k);var d=window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.dataset.theme=s||(d?"${dark}":"${light}");}catch(e){}})();`;
 
-const themeToggleScript = `(function(){var k="theme",r=document.documentElement,L="${light}",D="${dark}";var b=document.querySelectorAll("[data-theme-toggle]");function sync(){var dark=r.dataset.theme===D;b.forEach(function(t){t.setAttribute("aria-pressed",String(dark));t.setAttribute("aria-label",dark?"Switch to light theme":"Switch to dark theme");});}b.forEach(function(t){t.addEventListener("click",function(){var n=r.dataset.theme===D?L:D;r.dataset.theme=n;try{localStorage.setItem(k,n);}catch(e){}sync();});});sync();})();`;
+const themeToggleScript = isLightOnly
+  ? null
+  : `(function(){var k="theme",r=document.documentElement,L="${light}",D="${dark}";var b=document.querySelectorAll("[data-theme-toggle]");function sync(){var dark=r.dataset.theme===D;b.forEach(function(t){t.setAttribute("aria-pressed",String(dark));t.setAttribute("aria-label",dark?"Switch to light theme":"Switch to dark theme");});}b.forEach(function(t){t.addEventListener("click",function(){var n=r.dataset.theme===D?L:D;r.dataset.theme=n;try{localStorage.setItem(k,n);}catch(e){}sync();});});sync();})();`;
 
 const defaultSchema = [
   {
@@ -96,7 +102,7 @@ const schema = [...defaultSchema, ...(structuredData ? [structuredData].flat() :
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="generator" content={Astro.generator} />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="color-scheme" content={isLightOnly ? "light" : "light dark"} />
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl} />
@@ -148,6 +154,6 @@ const schema = [...defaultSchema, ...(structuredData ? [structuredData].flat() :
     </main>
     <Footer />
 
-    <script is:inline set:html={themeToggleScript} />
+    {themeToggleScript && <script is:inline set:html={themeToggleScript} />}
   </body>
 </html>

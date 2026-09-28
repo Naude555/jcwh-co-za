@@ -61,10 +61,50 @@ const isRemote = /^(https?:)?\/\//.test(src) || src.startsWith("data:");
 const isSvg = src.toLowerCase().endsWith(".svg");
 const asset = isRemote || isSvg ? undefined : resolveAsset(src);
 const loading = priority ? "eager" : "lazy";
+
+/* SVG cannot go through Sharp, so resolve it to its emitted URL and render a
+   plain <img>. Without this a logo inside src/assets would 404. */
+const svgModules = import.meta.glob<string>("/src/assets/images/**/*.svg", {
+  eager: true,
+  query: "?url",
+  import: "default",
+});
+
+const svgByKey = new Map<string, string>();
+for (const [path, url] of Object.entries(svgModules)) {
+  svgByKey.set(path, url);
+  svgByKey.set(path.split("/").pop() ?? path, url);
+}
+
+function resolveSvg(value: string): string | undefined {
+  if (!value) return undefined;
+  const file = value.replace(/^\.?\//, "").replace(/^src\//, "").replace(/^public\//, "");
+  return (
+    svgByKey.get(`/src/${file}`) ??
+    svgByKey.get(`/src/assets/images/${file}`) ??
+    svgByKey.get(file) ??
+    svgByKey.get(file.split("/").pop() ?? file) ??
+    // /public is served as-is.
+    (value.startsWith("/") ? value : undefined)
+  );
+}
+
+const svgUrl = isSvg ? resolveSvg(src) : undefined;
 ---
 
 {
-  asset ? (
+  svgUrl ? (
+    <img
+      src={svgUrl}
+      alt={alt}
+      width={width}
+      height={height}
+      loading={loading}
+      decoding="async"
+      fetchpriority={priority ? "high" : undefined}
+      class={className}
+    />
+  ) : asset ? (
     <Image
       src={asset}
       alt={alt}

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1023 331" role="img" aria-labelledby="logoTitle">
+  <title id="logoTitle">J.C. Wendy Houses, Cape Town</title>
+  <defs>
+    <!-- Cladding is clipped to the walls so the lines stop at the edges. -->
+    <clipPath id="walls">
+      <path d="M156 158h188v146H156z" />
+      <path d="M156 158 96 190v114h60z" />
+    </clipPath>
+  </defs>
+
+  <!-- Wendy house -->
+  <g fill="none" stroke="#141414" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <!-- left (receding) wall and front wall -->
+    <path d="M156 158 96 190v114h60z" />
+    <path d="M156 158h188v146H156z" />
+
+    <!-- gable roof with an overhanging eave -->
+    <path d="M132 168 250 84l118 84z" fill="#141414" />
+    <path d="M250 84 196 122" stroke-width="5" />
+
+    <!-- chimney -->
+    <path d="M296 96v40" stroke-width="8" />
+    <path d="M282 100h30" stroke-width="8" />
+
+    <!-- door with a brace and handle -->
+    <path d="M178 226h62v78h-62z" stroke-width="5" />
+    <path d="M178 304 240 226" stroke-width="3" />
+    <circle cx="232" cy="266" r="4" fill="#141414" />
+
+    <!-- window with a cross -->
+    <path d="M272 226h56v56h-56z" stroke-width="5" />
+    <path d="M272 254h56M300 226v56" stroke-width="3" />
+
+    <!-- ground -->
+    <path d="M74 304h30M96 292l-12 12M120 304h18" stroke-width="4" />
+  </g>
+
+  <!-- cladding -->
+  <g stroke="#141414" stroke-width="3" clip-path="url(#walls)">
+    <path d="M90 172h260M90 186h260M90 200h260M90 214h260M90 228h260M90 242h260M90 256h260M90 270h260M90 284h260M90 298h260" />
+    <path d="M96 172v134" stroke-width="2.5" opacity="0.5" />
+  </g>
+
+  <!-- wordmark -->
+  <g fill="#141414" font-family="'Arial Black', 'Helvetica Neue', Helvetica, Arial, sans-serif">
+    <text x="470" y="150" font-size="132" font-weight="900" letter-spacing="-3" textLength="215" lengthAdjust="spacingAndGlyphs">J.C.</text>
+    <text x="470" y="262" font-size="118" font-weight="900" letter-spacing="-4" textLength="545" lengthAdjust="spacingAndGlyphs">Wendy Houses</text>
+    <text x="742" y="308" font-size="46" font-weight="400" letter-spacing="4" textLength="188" lengthAdjust="spacingAndGlyphs">Cape Town</text>
+  </g>
+</svg>

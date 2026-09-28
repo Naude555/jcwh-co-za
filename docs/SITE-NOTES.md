@@ -74,12 +74,42 @@ Runtime: 23 pages, 46 assets (5.1 MB), 0 assets left remote, 23 redirects genera
   sitemap (link-following only); image-based navigation; table-based page layout;
   no `<h1>` anywhere (headings start at `<h4>`)
 
-## Design decisions
+## Design decisions (agreed with the client)
 
-- Blocks that needed hand-editing:
-- Brand colours accepted or overridden:
-- Fonts to load (update `apps/site/astro.config.mjs`):
-- Components added or removed:
+- **Light view only.** Built with `--theme light`: no dark palette is applied, no
+  theme switch is rendered, and `color-scheme: light` is set. Re-run with
+  `--theme auto` to get the dark theme and switch back.
+- **Home hero.** The old site's "Home" image button was being used as a hero image,
+  stretched across the page. Heroes now only ever use images from the page's own
+  content, so the home page is a centred text hero. Source fix: `base-v0.1.6`.
+- **Hero buttons.** The home hero links to Catalogue (primary) and Contact Us,
+  taken from the site's own navigation — the old site had no buttons of its own.
+- **Logo.** `apps/site/src/assets/images/logo.svg`, applied with
+  `--logo assets/images/logo.svg` so a re-crawl cannot drop it.
+  **This file is an interim vector drawn from the client's mark — replace it with
+  their own export** (see below).
+- **Favicon.** `apps/site/public/favicon.svg`, the house mark on the cream tint.
+- **Palette** (unchanged, from the old stylesheet): primary
+  `oklch(41.4% .0727 63.3)` = the link brown `#67421D`; surfaces from
+  `#d8bd89` / `#E7D5B4`.
+- **Fonts**: Georgia (the only font the old site names).
+
+### Swapping in the real logo
+
+Drop the export into `apps/site/src/assets/images/` and re-generate — no crawl
+needed, so this takes seconds:
+
+```bash
+# replace the placeholder (keep the name, or use your own and pass it below)
+cp ~/Downloads/jcwh-logo.svg apps/site/src/assets/images/logo.svg
+
+pnpm generate --url https://www.jcwh.co.za --theme light --logo assets/images/logo.svg
+pnpm build
+```
+
+For a PNG or a differently named file, change the `--logo` path to match
+(`--logo assets/images/logo.png`). The header renders it at 32–36px tall, so a
+horizontal lockup with a transparent background works best.
 
 ## URLs and redirects
 

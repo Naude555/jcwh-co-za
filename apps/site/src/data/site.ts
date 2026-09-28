@@ -84,6 +84,8 @@ const siteSchema = z.object({
   }),
 
   theme: z.object({
+    /** "auto" follows the system colour scheme; "light" is light-only. */
+    mode: z.enum(["auto", "light"]).default("auto"),
     light: z.string().default("brand"),
     dark: z.string().default("brand-dark"),
     fonts: z
@@ -143,6 +145,16 @@ export function logoText(): string {
 
 export function hasLogo(): boolean {
   return site.logo.src.trim().length > 0;
+}
+
+/**
+ * True when the site is built light-only.
+ *
+ * Used to hide the theme switch and skip the dark palette entirely — the right
+ * choice when a brand's colours only work on light backgrounds.
+ */
+export function lightOnly(): boolean {
+  return site.theme.mode === "light";
 }
 
 /** Street address as printable lines, ignoring empty parts. */

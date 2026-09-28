@@ -8,6 +8,7 @@ import { renderBrandCss } from "./brand.ts";
 import type {
   Action,
   ContactInfo,
+  ImageRef,
   MigrationReport,
   NavItem,
   RedirectRecord,
@@ -99,9 +100,19 @@ function contentFile(data: Record<string, unknown>, body?: string): string {
   return `---\n${frontmatter}\n---\n${trimmedBody ? `\n${trimmedBody}\n` : ""}`;
 }
 
+/**
+ * First downloaded image in the page's content, usable as a cover or social card.
+ *
+ * Deliberately ignores `page.images`, which also holds site chrome: a navigation
+ * button is not a social preview.
+ */
+function coverImageFor(page: ScrapedPage): ImageRef | undefined {
+  return page.contentImages.find((candidate) => /^(assets\/|(\/)?images\/)/.test(candidate.src));
+}
+
 /** SEO block for a migrated entry. */
 function seoFor(page: ScrapedPage): Record<string, unknown> {
-  const image = page.images.find((candidate) => /^(assets\/|(\/)?images\/)/.test(candidate.src));
+  const image = coverImageFor(page);
   return {
     title: page.title,
     description: truncate(page.description, 158),
@@ -112,7 +123,7 @@ function seoFor(page: ScrapedPage): Record<string, unknown> {
 
 /** First image on the page that we downloaded and can use as a cover. */
 function coverFor(page: ScrapedPage): Record<string, unknown> | undefined {
-  const image = page.images.find((candidate) => /^(assets\/|(\/)?images\/)/.test(candidate.src));
+  const image = coverImageFor(page);
   return image ? { src: image.src, alt: image.alt || page.title } : undefined;
 }
 
@@ -187,7 +198,47 @@ async function writeContent(
       continue;
     }
 
-    const template =
+    /**
+ * Buttons for the home hero, taken from the site's own navigation.
+ *
+ * A scraped home page seldom has hero buttons of its own, which leaves a text-only
+ * hero with no next step. The labels and targets are the site's own top-level
+ * pages, so nothing is invented: the first destination after home, plus contact.
+ */
+function homeHeroActions(crawl: CrawlResult): Action[] {
+  const live = new Set(crawl.pages.map((page) => page.path));
+  const nav = mapNav(crawl.chrome?.navigation ?? [], crawl.origin, live).filter(
+    (item) => item.href.length > 0 && item.href !== "/" && !/^https?:/i.test(item.href),
+  );
+  const primary = nav[0];
+  if (!primary) return [];
+
+  const actions: Action[] = [{ label: primary.label, href: primary.href, style: "primary" }];
+
+  const contact = nav.find((item) => /contact/i.test(`${item.href} ${item.label}`));
+  if (contact && contact.href !== primary.href) {
+    actions.push({ label: contact.label, href: contact.href, style: "outline" });
+  }
+
+  return actions;
+}
+
+/** The page's sections, with the home hero's buttons filled in when it has none. */
+function withHomeHeroActions(page: ScrapedPage, crawl: CrawlResult): Section[] {
+  const hero = page.sections.find((section) => section.type === "hero");
+  if (page.kind !== "home" || !hero || hero.type !== "hero" || (hero.actions?.length ?? 0) > 0) {
+    return page.sections;
+  }
+
+  const actions = homeHeroActions(crawl);
+  if (actions.length === 0) return page.sections;
+
+  return page.sections.map((section) =>
+    section.type === "hero" ? { ...section, actions } : section,
+  );
+}
+
+const template =
       page.kind === "contact" ? "contact" : page.kind === "legal" ? "legal" : "marketing";
 
     await writeText(
@@ -197,7 +248,7 @@ async function writeContent(
         description: truncate(page.description, 158),
         template,
         breadcrumbs: [],
-        sections: page.sections,
+        sections: withHomeHeroActions(page, crawl),
         seo: seoFor(page),
         source: sourceOf(page, scrapedAt),
       }),
@@ -554,8 +605,8 @@ export function buildSiteConfig(
     url: options.url,
     locale: home?.lang ?? "en",
     logo: {
-      src: chrome?.logo?.src ?? "",
-      alt: chrome?.logo?.alt || `${name} logo`,
+      src: options.logo ?? chrome?.logo?.src ?? "",
+      alt: options.logo ? `${name} logo` : chrome?.logo?.alt || `${name} logo`,
       text: name,
     },
     contact: mergeContact(chrome, crawl.pages),
@@ -568,6 +619,7 @@ export function buildSiteConfig(
       credit: "Rebuilt with Astro, Tailwind CSS and daisyUI.",
     },
     theme: {
+      mode: options.themeMode,
       light: "brand",
       dark: "brand-dark",
       fonts: { heading: brand.fonts.heading, body: brand.fonts.body },

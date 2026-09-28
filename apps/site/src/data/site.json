@@ -3,10 +3,10 @@
   "legalName": "",
   "tagline": "Welcome to JC Wendy Houses Online",
   "description": "Welcome to JC Wendy Houses Online",
-  "url": "https://www.jcwh.co.za/index.html",
+  "url": "https://www.jcwh.co.za",
   "locale": "en",
   "logo": {
-    "src": "",
+    "src": "assets/images/logo.svg",
     "alt": "JC Wendy Houses logo",
     "text": "JC Wendy Houses"
   },
@@ -57,6 +57,7 @@
     "credit": "Rebuilt with Astro, Tailwind CSS and daisyUI."
   },
   "theme": {
+    "mode": "light",
     "light": "brand",
     "dark": "brand-dark",
     "fonts": {
@@ -87,8 +88,8 @@
     }
   },
   "source": {
-    "url": "https://www.jcwh.co.za/index.html",
-    "scrapedAt": "2026-09-28T07:43:46.031Z",
+    "url": "https://www.jcwh.co.za",
+    "scrapedAt": "2026-09-28T08:26:06.002Z",
     "pagesMigrated": 23
   }
 }

@@ -6,12 +6,15 @@ breadcrumbs: []
 sections:
   - type: hero
     heading: Welcome to JC Wendy Houses Online
-    image:
-      src: assets/images/home_o-62e34b77.jpg
-      alt: Home
-    actions: []
-    variant: split
-    align: left
+    actions:
+      - label: Catalogue
+        href: /cat
+        style: primary
+      - label: Contact Us
+        href: /contact
+        style: outline
+    variant: centered
+    align: center
   - type: richText
     body: >-
       Wendy houses are perfect for living in, and can be used for storage as well.
@@ -40,9 +43,8 @@ sections:
 seo:
   title: JC Wendy Houses | Welcome
   description: ""
-  image: assets/images/home_o-62e34b77.jpg
   noindex: false
 source:
   url: https://www.jcwh.co.za/index.html
-  scrapedAt: 2026-09-28T07:43:46.031Z
+  scrapedAt: 2026-09-28T08:26:06.002Z
 ---
