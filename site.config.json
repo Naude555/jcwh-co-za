@@ -1,7 +1,7 @@
 {
   "$schema": "./docs/site.config.schema.json",
   "slug": "jcwh-co-za",
-  "client": "Jcwh Co Za",
+  "client": "JC Wendy Houses",
   "sourceUrl": "https://www.jcwh.co.za/index.html",
   "base": {
     "version": "0.1.3",
