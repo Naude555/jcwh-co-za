@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://127.0.0.1:PORT/index.html</loc>
+  </url>
+  <url>
+    <loc>http://127.0.0.1:PORT/cat.html</loc>
+  </url>
+  <url>
+    <loc>http://127.0.0.1:PORT/contact.html</loc>
+  </url>
+  <url>
+    <loc>http://127.0.0.1:PORT/p1.html</loc>
+  </url>
+</urlset>

@@ -1,14 +1,105 @@
 {
   "$schema": "./docs/site.config.schema.json",
-  "slug": "base-template",
-  "client": "Base template",
-  "sourceUrl": "",
+  "slug": "jcwh-co-za",
+  "client": "Jcwh Co Za",
+  "sourceUrl": "https://www.jcwh.co.za/index.html",
   "base": {
-    "version": "0.1.0",
-    "tag": "base-v0.1.0"
+    "version": "0.1.3",
+    "tag": "base-v0.1.3"
   },
-  "status": "template",
+  "status": "generated",
   "deployTarget": "",
-  "notes": "This is the base template. Client instances are created with `pnpm new-site <slug>`.",
-  "runs": []
+  "notes": "Tooling synced to base-v0.1.1 after the first crawl exposed legacy-markup gaps.",
+  "runs": [
+    {
+      "at": "2026-09-28T07:31:14.824Z",
+      "command": "modernize",
+      "status": "generated",
+      "pages": 23,
+      "posts": 0,
+      "services": 0,
+      "redirects": 23
+    },
+    {
+      "at": "2026-09-28T07:31:14.807Z",
+      "command": "modernize",
+      "status": "crawled",
+      "pages": 23
+    },
+    {
+      "at": "2026-09-28T07:28:15.194Z",
+      "command": "modernize",
+      "status": "generated",
+      "pages": 23,
+      "posts": 0,
+      "services": 0,
+      "redirects": 23
+    },
+    {
+      "at": "2026-09-28T07:28:15.169Z",
+      "command": "modernize",
+      "status": "crawled",
+      "pages": 23
+    },
+    {
+      "at": "2026-09-28T07:25:28.995Z",
+      "command": "modernize",
+      "status": "generated",
+      "pages": 23,
+      "posts": 0,
+      "services": 0,
+      "redirects": 23
+    },
+    {
+      "at": "2026-09-28T07:25:28.975Z",
+      "command": "modernize",
+      "status": "crawled",
+      "pages": 23
+    },
+    {
+      "at": "2026-09-28T07:22:03.354Z",
+      "command": "modernize",
+      "status": "generated",
+      "pages": 23,
+      "posts": 0,
+      "services": 0,
+      "redirects": 23
+    },
+    {
+      "at": "2026-09-28T07:22:03.337Z",
+      "command": "modernize",
+      "status": "crawled",
+      "pages": 23
+    },
+    {
+      "at": "2026-09-28T07:17:34.336Z",
+      "command": "modernize",
+      "status": "generated",
+      "pages": 23,
+      "posts": 0,
+      "services": 0,
+      "redirects": 23
+    },
+    {
+      "at": "2026-09-28T07:17:34.315Z",
+      "command": "modernize",
+      "status": "crawled",
+      "pages": 23
+    },
+    {
+      "at": "2026-09-28T07:12:51.797Z",
+      "command": "modernize",
+      "status": "generated",
+      "pages": 23,
+      "posts": 0,
+      "services": 0,
+      "redirects": 23
+    },
+    {
+      "at": "2026-09-28T07:12:51.768Z",
+      "command": "modernize",
+      "status": "crawled",
+      "pages": 23
+    }
+  ]
 }

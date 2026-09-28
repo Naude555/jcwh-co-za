@@ -7,6 +7,7 @@ import type { BrandResult } from "./brand.ts";
 import { renderBrandCss } from "./brand.ts";
 import type {
   Action,
+  ContactInfo,
   MigrationReport,
   NavItem,
   RedirectRecord,
@@ -394,6 +395,92 @@ export function liveRoutes(crawl: CrawlResult): Map<string, ScrapedPage> {
   return routes;
 }
 
+/**
+ * The title segment shared by the most pages.
+ *
+ * Legacy sites rarely publish a site name anywhere machine-readable, and their
+ * titles read "JC Wendy Houses | Catalogue". The words that repeat across pages
+ * are the site's own name; page-specific words lose the vote.
+ */
+export function sharedTitleSegment(titles: string[]): { name: string; support: number } | null {
+  const counts = new Map<string, { display: string; count: number }>();
+
+  for (const title of titles) {
+    const seen = new Set<string>();
+    for (const segment of title.split(/[|•·–—-]/)) {
+      const clean = segment.trim();
+      if (clean.length < 3 || clean.length > 60) continue;
+
+      const key = clean.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const entry = counts.get(key);
+      if (entry) entry.count += 1;
+      else counts.set(key, { display: clean, count: 1 });
+    }
+  }
+
+  const best = [...counts.values()].sort(
+    (a, b) => b.count - a.count || b.display.length - a.display.length,
+  )[0];
+
+  return best && best.count >= 2 ? { name: best.display, support: best.count } : null;
+}
+
+/** An empty address, matching what apps/site expects. */
+const EMPTY_ADDRESS = { street: "", city: "", region: "", postalCode: "", country: "" };
+
+/**
+ * Merge contact details site-wide.
+ *
+ * Sites usually publish their phone number, email and postal address on one page
+ * only — the contact page — while the site chrome is read from the home page. So
+ * start from the chrome and fill the gaps from whichever page has them, looking at
+ * the contact page first.
+ */
+function mergeContact(chrome: ChromeData | null, pages: ScrapedPage[]): ContactInfo {
+  const merged: ContactInfo = {
+    email: chrome?.contact.email ?? "",
+    phone: chrome?.contact.phone ?? "",
+    address: { ...(chrome?.contact.address ?? EMPTY_ADDRESS) },
+    hours: chrome?.contact.hours ?? [],
+  };
+
+  const ordered = [
+    ...pages.filter((page) => page.kind === "contact"),
+    ...pages.filter((page) => page.kind !== "contact"),
+  ];
+
+  for (const page of ordered) {
+    if (!merged.email && page.contact.email) merged.email = page.contact.email;
+    if (!merged.phone && page.contact.phone) merged.phone = page.contact.phone;
+    if (!merged.address.street && page.contact.address.street) {
+      merged.address = { ...page.contact.address };
+    }
+    if (merged.hours.length === 0 && page.contact.hours.length > 0) {
+      merged.hours = page.contact.hours;
+    }
+  }
+
+  return merged;
+}
+
+/** Social links from the chrome, falling back to any page that lists them. */
+function mergeSocials(
+  chrome: ChromeData | null,
+  pages: ScrapedPage[],
+): { label: string; href: string }[] {
+  const seen = new Map<string, { label: string; href: string }>();
+
+  for (const link of chrome?.socials ?? []) seen.set(link.label, link);
+  for (const page of pages) {
+    for (const link of page.socials) if (!seen.has(link.label)) seen.set(link.label, link);
+  }
+
+  return [...seen.values()];
+}
+
 /** The site-wide config that apps/site/src/data/site.ts validates. */
 export function buildSiteConfig(
   crawl: CrawlResult,
@@ -411,9 +498,23 @@ export function buildSiteConfig(
     .split(".")[0]!
     .replace(/[-_]+/g, " ")
     .replace(/^\w/, (letter) => letter.toUpperCase());
-  const name = chrome?.name || fallbackName;
+
+  // A name read from a page title (or guessed from the hostname) is weak, so let
+  // every page title vote on it. Structured data always wins.
+  const voted = sharedTitleSegment(crawl.pages.map((page) => page.title));
+  const weakName = !chrome || chrome.nameFrom !== "structured";
+  const name =
+    weakName && voted && voted.support >= Math.ceil(crawl.pages.length / 2)
+      ? voted.name
+      : chrome?.name || voted?.name || fallbackName;
 
   const primary = mapNav(chrome?.navigation ?? [], crawl.origin, live);
+
+  // A menu read from the home page never links back to home (it is the current
+  // page, so it is rendered as text or an image rather than a link). Put it back.
+  if (primary.length > 0 && !primary.some((item) => item.href === "/")) {
+    primary.unshift({ label: "Home", href: "/" });
+  }
 
   // Header call-to-action: the home page's hero buttons, else a contact link.
   const hero = home?.sections.find((section) => section.type === "hero");
@@ -457,19 +558,8 @@ export function buildSiteConfig(
       alt: chrome?.logo?.alt || `${name} logo`,
       text: name,
     },
-    contact: {
-      email: chrome?.contact.email ?? "",
-      phone: chrome?.contact.phone ?? "",
-      address: chrome?.contact.address ?? {
-        street: "",
-        city: "",
-        region: "",
-        postalCode: "",
-        country: "",
-      },
-      hours: chrome?.contact.hours ?? [],
-    },
-    socials: chrome?.socials ?? [],
+    contact: mergeContact(chrome, crawl.pages),
+    socials: mergeSocials(chrome, crawl.pages),
     navigation: { primary, actions, footer: footerLinks },
     footer: {
       tagline: "",

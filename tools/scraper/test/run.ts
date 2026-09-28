@@ -40,17 +40,22 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
+/** Create the minimal app layout generateSite writes into. */
+async function makeSiteDirs(siteDir: string): Promise<void> {
+  for (const dir of ["pages", "posts", "services"]) {
+    await mkdir(join(siteDir, "src/content", dir), { recursive: true });
+  }
+  await mkdir(join(siteDir, "src/data"), { recursive: true });
+  await mkdir(join(siteDir, "src/styles"), { recursive: true });
+}
+
 async function main(): Promise<void> {
   const server = await startFixtureServer();
   const root = join(tmpdir(), `jcwh-scraper-test-${Date.now()}`);
   const outDir = join(root, "output");
   const siteDir = join(root, "site");
 
-  for (const dir of ["pages", "posts", "services"]) {
-    await mkdir(join(siteDir, "src/content", dir), { recursive: true });
-  }
-  await mkdir(join(siteDir, "src/data"), { recursive: true });
-  await mkdir(join(siteDir, "src/styles"), { recursive: true });
+  await makeSiteDirs(siteDir);
 
   const options: Options = {
     ...DEFAULTS,
@@ -278,6 +283,120 @@ async function main(): Promise<void> {
   };
   check("report lists every page", report.pages.length === 5, String(report.pages.length));
   check("report includes the generated light theme", Boolean(report.palette.light["primary"]));
+
+  /* ---- Legacy site: image navigation, no <h1>, labelled contact -------- */
+  const legacyServer = await startFixtureServer(0, "fixture-legacy");
+  const legacyOptions: Options = {
+    ...options,
+    url: legacyServer.url,
+    outDir: join(root, "legacy/output"),
+    siteDir: join(root, "legacy/site"),
+  };
+  await makeSiteDirs(legacyOptions.siteDir);
+
+  const legacyStore = new AssetStore({
+    siteDir: legacyOptions.siteDir,
+    enabled: true,
+    maxBytes: legacyOptions.maxAssetBytes,
+  });
+  const legacyStarted = Date.now();
+  const legacyCrawl = await crawlSite(legacyOptions, legacyStore, createLogger(false));
+  const legacyBrand = extractBrand(legacyCrawl.cssTexts);
+  await generateSite(legacyCrawl, legacyBrand, legacyOptions, createLogger(false), {
+    startedAt: legacyStarted,
+    assetTotals: legacyStore.totals(),
+    assets: legacyStore.all(),
+  });
+  await legacyServer.close();
+
+  const legacyHome = legacyCrawl.pages.find((page) => page.path === "/");
+  const legacyCatalogue = legacyCrawl.pages.find((page) => page.path === "/cat");
+  const legacyHero = legacyHome?.sections.find((section) => section.type === "hero");
+  const legacySite = JSON.parse(
+    await readFile(join(legacyOptions.siteDir, "src/data/site.json"), "utf8"),
+  ) as {
+    name: string;
+    navigation: { primary: { label: string; href: string }[] };
+    contact: { phone: string; email: string; address: { street: string } };
+  };
+
+  check("site name voted from repeated title segments", legacySite.name === "Legacy Joinery", legacySite.name);
+  check(
+    "navigation labels come from image alt text",
+    legacySite.navigation.primary.some((item) => item.label === "Catalogue") &&
+      legacySite.navigation.primary.some((item) => item.label === "Contact Us"),
+    JSON.stringify(legacySite.navigation.primary.map((item) => `${item.label}→${item.href}`)),
+  );
+  check(
+    "home is restored to a menu that cannot link to itself",
+    legacySite.navigation.primary[0]?.label === "Home" && legacySite.navigation.primary[0]?.href === "/",
+    JSON.stringify(legacySite.navigation.primary[0]),
+  );
+  check(
+    "phone merged into the site data from the contact page",
+    legacySite.contact.phone === "(021) 555-1234",
+    legacySite.contact.phone,
+  );
+  check(
+    "fax is not mistaken for the phone number",
+    !legacySite.contact.phone.includes("9999"),
+    legacySite.contact.phone,
+  );
+  check(
+    "postal address merged into the site data",
+    legacySite.contact.address.street.includes("PO Box 1234"),
+    legacySite.contact.address.street,
+  );
+  check(
+    "email merged into the site data",
+    legacySite.contact.email === "info@legacyjoinery.example",
+    legacySite.contact.email,
+  );
+  check(
+    "hero heading falls back to an <h4> when there is no <h1>",
+    legacyHero?.type === "hero" && legacyHero.heading === "Welcome to Legacy Joinery",
+    legacyHero?.type === "hero" ? legacyHero.heading : "no hero",
+  );
+  check(
+    "table caption rows are lifted out of the Markdown table",
+    !(legacyCatalogue?.markdown ?? "").includes("| | | |") &&
+      (legacyCatalogue?.markdown ?? "").includes("Various other sizes are available"),
+    (legacyCatalogue?.markdown ?? "").slice(0, 220),
+  );
+
+  const legacyPrimaryRgb = parseColor(legacyBrand.palette.light["primary"] ?? "");
+  const legacyPrimaryHue = legacyPrimaryRgb ? rgbToOklch(legacyPrimaryRgb).h : -1;
+  check(
+    "brown link colour becomes the primary, not the pale page background",
+    legacyPrimaryHue > 35 && legacyPrimaryHue < 95,
+    `hue ${legacyPrimaryHue.toFixed(1)} from ${legacyBrand.palette.light["primary"]}`,
+  );
+  const legacyBaseRgb = parseColor(legacyBrand.palette.light["base-200"] ?? "");
+  check(
+    "the brand's light tint carries into the surfaces",
+    legacyBaseRgb !== null && rgbToOklch(legacyBaseRgb).c > 0.02,
+    legacyBrand.palette.light["base-200"],
+  );
+  check(
+    "an image-only detail page still migrates",
+    legacyCrawl.pages.some((page) => page.path === "/p1" && page.images.length > 0),
+  );
+  check(
+    "content images are not mistaken for a client logo strip",
+    legacyCrawl.pages.every((page) => !page.sections.some((section) => section.type === "logos")),
+    JSON.stringify(
+      legacyCrawl.pages
+        .flatMap((page) => page.sections.filter((section) => section.type === "logos"))
+        .map((section) => section.type),
+    ),
+  );
+  check(
+    "gallery detail pages are flagged for review",
+    (legacyCrawl.pages.find((page) => page.path === "/p1")?.warnings ?? []).some((warning) =>
+      warning.includes("gallery detail page"),
+    ),
+    JSON.stringify(legacyCrawl.pages.find((page) => page.path === "/p1")?.warnings ?? []),
+  );
 
   /* ---- Results -------------------------------------------------------- */
   const failures = checks.filter((entry) => !entry.passed);

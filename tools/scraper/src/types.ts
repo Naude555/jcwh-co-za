@@ -289,6 +289,15 @@ export interface ScrapedPage {
   images: ImageRef[];
   links: PageLink[];
   sections: Section[];
+  /** Contact details found on this page, merged site-wide by the generator. */
+  contact: ContactInfo;
+  /** Social links found on this page, merged site-wide by the generator. */
+  socials: { label: string; href: string }[];
+  /**
+   * Images that link to another page (thumbnails). Used after the crawl to swap a
+   * thumbnail for the larger image on the page it points at.
+   */
+  imageLinks: { src: string; href: string }[];
   publishedAt?: string;
   updatedAt?: string;
   author?: string;

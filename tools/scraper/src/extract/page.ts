@@ -2,7 +2,7 @@ import type { Cheerio, CheerioAPI } from "cheerio";
 import type { Element } from "domhandler";
 import type { ContactInfo, FooterColumn, ImageRef, NavChild, NavItem } from "../types.ts";
 import { resolveHref } from "../utils/url.ts";
-import { normaliseWhitespace, textOf } from "./content.ts";
+import { normaliseWhitespace, extractImages, findMainContent, textOf } from "./content.ts";
 import { cleanLabel, humanise, parseDate, truncate } from "./text.ts";
 
 /** Host -> display name, used to rebuild a social link list. */
@@ -169,33 +169,101 @@ export function extractSocials($: CheerioAPI, baseUrl: string): { label: string;
   return [...seen.entries()].map(([label, href]) => ({ label, href }));
 }
 
-/**
- * Primary navigation: from every nav-like list on the page we keep the one with
- * the most internal links, which is reliably the main menu rather than a footer
- * or a sidebar.
- */
-export function extractNavigation($: CheerioAPI, baseUrl: string, origin: string): NavItem[] {
-  let bestLinks: { label: string; href: string }[] = [];
+/** Label for a link that may be text-only, an image, or an icon button. */
+function linkLabel(anchor: Cheerio<Element>): { label: string; fromImage: boolean } {
+  const text = normaliseWhitespace(anchor.text());
+  if (text) return { label: text, fromImage: false };
 
-  $("header nav, nav, header ul, [role='navigation'] ul").each((_, scope) => {
+  const image = anchor.find("img").first();
+  const alt = image.attr("alt");
+  if (alt) return { label: normaliseWhitespace(alt), fromImage: true };
+
+  const aria = anchor.attr("aria-label") ?? anchor.attr("title");
+  return { label: normaliseWhitespace(aria ?? ""), fromImage: false };
+}
+
+/** Is `node` inside `root`? Used to tell chrome links from content links. */
+function isInside(node: Element, root: Element): boolean {
+  let current = node.parent as Element | null;
+  while (current) {
+    if (current === root) return true;
+    current = current.parent as Element | null;
+  }
+  return false;
+}
+
+/** Internal links in document order, excluding those inside the main content. */
+function chromeLinks(
+  $: CheerioAPI,
+  baseUrl: string,
+  origin: string,
+  contentRoot?: Element,
+): { label: string; href: string }[] {
+  const links: { label: string; href: string }[] = [];
+
+  $("a[href]").each((_, element) => {
+    const el = element as Element;
+    if (contentRoot && isInside(el, contentRoot)) return;
+
+    const resolved = absoluteFor(el.attribs?.["href"], baseUrl);
+    if (!resolved || !resolved.startsWith(origin)) return;
+    if (socialLabelFor(new URL(resolved).hostname)) return;
+
+    const { label, fromImage } = linkLabel($(el as never) as unknown as Cheerio<Element>);
+    if (!label || label.length > 40) return;
+    // The header logo is not a menu item.
+    if (fromImage && /logo|brand/i.test(label)) return;
+    if (links.some((link) => link.href === resolved)) return;
+
+    links.push({ label: cleanLabel(label), href: resolved });
+  });
+
+  return links;
+}
+
+/**
+ * Primary navigation.
+ *
+ * A semantic `<nav>`/`role="navigation"` container wins when the site has one.
+ * Failing that most sites are still navigable, so every internal link in the page
+ * chrome — that is, outside the main content — is used instead. That covers
+ * classic layouts whose menu is a `<div class="nbar">` of image buttons, and
+ * still excludes footer links (they come after the content).
+ */
+export function extractNavigation(
+  $: CheerioAPI,
+  baseUrl: string,
+  origin: string,
+): NavItem[] {
+  let best: { label: string; href: string }[] = [];
+
+  $("nav, [role='navigation']").each((_, scope) => {
     const links: { label: string; href: string }[] = [];
 
     $(scope)
-      .children("li")
-      .each((__, li) => {
-        const anchor = $(li).children("a").first();
+      .find("a[href]")
+      .each((__, anchorElement) => {
+        const anchor = $(anchorElement) as unknown as Cheerio<Element>;
         const resolved = absoluteFor(anchor.attr("href"), baseUrl);
-        const label = normaliseWhitespace(anchor.text());
         if (!resolved || !resolved.startsWith(origin)) return;
-        if (!label || label.length > 40) return;
         if (socialLabelFor(new URL(resolved).hostname)) return;
+
+        const { label, fromImage } = linkLabel(anchor);
+        if (!label || label.length > 40) return;
+        if (fromImage && /logo|brand/i.test(label)) return;
+        if (links.some((link) => link.href === resolved)) return;
+
         links.push({ label: cleanLabel(label), href: resolved });
       });
 
-    if (links.length > bestLinks.length) bestLinks = links;
+    if (links.length > best.length) best = links;
   });
 
-  return bestLinks.slice(0, 8).map((link) => ({ label: link.label, href: link.href }));
+  if (best.length >= 2) return best.slice(0, 8).map((link) => ({ ...link }));
+
+  const contentNode = findMainContent($);
+  const fallback = chromeLinks($, baseUrl, origin, contentNode.get(0) as Element | undefined);
+  return fallback.slice(0, 8).map((link) => ({ ...link }));
 }
 
 /** Sub-navigation for the current page, used to give a parent item children. */
@@ -300,6 +368,30 @@ export function extractContact(
     contact.phone = label.length >= 7 && /[\d\s()+.-]{7,}/.test(label) ? label : raw;
   });
 
+  // Classic sites often print contact details as plain list items ("Phone (021)
+  // 905-8335") instead of tel:/mailto: links, so read the labels as well.
+  const phoneLabels = /^\s*(?:telephone|phone|tel|cell|cellphone|mobile|whatsapp)\b\s*[:\-–]?\s*(.+)$/i;
+  const postalLabels = /^\s*(?:post|postal|postal address|address|physical address|visit us at)\b\s*[:\-–]?\s*(.+)$/i;
+
+  $("li, p, td, dd").each((_, element) => {
+    const text = normaliseWhitespace($(element as never).text());
+    if (text.length === 0 || text.length > 160) return;
+
+    if (!contact.phone) {
+      const phone = phoneLabels.exec(text)?.[1]?.trim();
+      if (phone && phone.length <= 60 && /\d[\d\s()+.\-]{5,}/.test(phone)) {
+        contact.phone = cleanLabel(phone);
+      }
+    }
+
+    if (!contact.address.street) {
+      const postal = postalLabels.exec(text)?.[1]?.trim();
+      if (postal && postal.length > 5 && postal.length <= 160) {
+        contact.address.street = cleanLabel(postal);
+      }
+    }
+  });
+
   const addressText = normaliseWhitespace($("address").first().text());
   if (addressText) contact.address.street = addressText.slice(0, 200);
 
@@ -374,8 +466,15 @@ export function extractBrandIdentity(
   meta: PageMeta,
   jsonLd: Record<string, unknown>[],
   origin: string,
-): { name: string; tagline: string; legalName: string } {
+): {
+  name: string;
+  tagline: string;
+  legalName: string;
+  /** How confident we are in the name, so the caller can override it. */
+  nameFrom: "structured" | "title" | "hostname";
+} {
   let name = meta.siteName ?? "";
+  let nameFrom: "structured" | "title" | "hostname" = meta.siteName ? "structured" : "hostname";
   let legalName = "";
 
   for (const node of jsonLd) {
@@ -383,7 +482,10 @@ export function extractBrandIdentity(
     if (!/Organization|LocalBusiness|WebSite/i.test(type)) continue;
     const nodeName = typeof node["name"] === "string" ? node["name"] : "";
     const nodeLegal = typeof node["legalName"] === "string" ? node["legalName"] : "";
-    if (!name && nodeName) name = nodeName;
+    if (!name && nodeName) {
+      name = nodeName;
+      nameFrom = "structured";
+    }
     if (!legalName && nodeLegal) legalName = nodeLegal;
   }
 
@@ -391,14 +493,20 @@ export function extractBrandIdentity(
     // "About us | Acme Ltd" -> "Acme Ltd"; otherwise the bare host name.
     const parts = meta.title.split(/[|•–—]/).map((part) => part.trim());
     name = parts.length > 1 ? (parts[parts.length - 1] ?? "") : "";
+    if (name) nameFrom = "title";
   }
   if (!name) {
     const host = new URL(origin).hostname.replace(/^www\./, "");
     name = humanise(host.split(".")[0] ?? "Site");
+    nameFrom = "hostname";
   }
 
   const heroHeading = normaliseWhitespace($("h1").first().text());
-  const tagline = heroHeading.length > 4 && heroHeading.length < 140 ? heroHeading : meta.description;
+  const firstHeading = normaliseWhitespace($("h1, h2, h3, h4").first().text());
+  const tagline =
+    (heroHeading.length > 4 && heroHeading.length < 140 ? heroHeading : "") ||
+    (firstHeading.length > 4 && firstHeading.length < 140 ? firstHeading : "") ||
+    meta.description;
 
-  return { name, tagline, legalName };
+  return { name, tagline, legalName, nameFrom };
 }

@@ -42,8 +42,9 @@ import {
   extractLinks,
   findMainContent,
   parseHtml,
+  pickImageSrc,
 } from "./extract/content.ts";
-import { wordCount } from "./extract/text.ts";
+import { dropSiteName, wordCount } from "./extract/text.ts";
 import { writeText } from "./utils/fs.ts";
 import {
   contentId,
@@ -114,6 +115,10 @@ async function localiseAssets(page: ScrapedPage, store: AssetStore): Promise<num
 
   page.markdown = rewrite(page.markdown);
   page.images = page.images.map((image) => ({ ...image, src: mapping.get(image.src) ?? image.src }));
+  page.imageLinks = page.imageLinks.map((link) => ({
+    ...link,
+    src: mapping.get(link.src) ?? link.src,
+  }));
 
   for (const section of page.sections as Section[]) {
     walkImageRefs(section, (image) => {
@@ -141,6 +146,71 @@ function classify(path: string, title: string, text: string, description: string
   }
 
   return "page";
+}
+
+/**
+ * Swap gallery thumbnails for the full-size image on the page they link to.
+ *
+ * A classic gallery is a grid of thumbnails pointing at detail pages, so without
+ * this the rebuild would show postage stamps.
+ */
+function promoteGalleryThumbnails(pages: ScrapedPage[], logger: Logger): number {
+  // An image that appears on most pages is site chrome (a logo, a nav button), not
+  // the photo a detail page is about. Without this, detail pages that declare no
+  // dimensions fall back to DOM order and "largest" resolves to a nav button.
+  const frequency = new Map<string, number>();
+  for (const page of pages) {
+    for (const src of new Set(page.images.map((image) => image.src))) {
+      frequency.set(src, (frequency.get(src) ?? 0) + 1);
+    }
+  }
+  const chromeThreshold = Math.max(3, Math.ceil(pages.length / 2));
+
+  const largestByUrl = new Map<string, ImageRef>();
+  for (const page of pages) {
+    const candidates = page.images.filter(
+      (image) => (frequency.get(image.src) ?? 0) < chromeThreshold,
+    );
+    const largest = [...candidates].sort(
+      (a, b) => (b.width ?? 0) * (b.height ?? 0) - (a.width ?? 0) * (a.height ?? 0),
+    )[0];
+    if (largest) largestByUrl.set(page.url.replace(/\/$/, ""), largest);
+  }
+
+  let promoted = 0;
+
+  for (const page of pages) {
+    if (page.imageLinks.length === 0) continue;
+    const hrefBySrc = new Map(page.imageLinks.map((link) => [link.src, link.href]));
+
+    for (const section of page.sections) {
+      if (section.type !== "gallery") continue;
+
+      section.images = section.images.map((image) => {
+        const href = hrefBySrc.get(image.src);
+        if (!href) return image;
+
+        const detail = largestByUrl.get(href.replace(/\/$/, ""));
+        if (!detail || detail.src === image.src) return image;
+
+        // Only refuse the swap when both sizes are known and the detail page's
+        // image is genuinely not bigger. Legacy detail pages rarely declare
+        // dimensions, so unknown sizes must not block the promotion.
+        const thumbnailArea = (image.width ?? 0) * (image.height ?? 0);
+        const detailArea = (detail.width ?? 0) * (detail.height ?? 0);
+        if (thumbnailArea > 0 && detailArea > 0 && detailArea <= thumbnailArea) return image;
+
+        promoted += 1;
+        return { ...detail, alt: detail.alt || image.alt };
+      });
+    }
+  }
+
+  if (promoted > 0) {
+    logger.info(`Promoted ${promoted} gallery thumbnail(s) to their full-size images`);
+  }
+
+  return promoted;
 }
 
 /** Inline `<style>` blocks plus every linked stylesheet, for brand extraction. */
@@ -241,6 +311,20 @@ export function extractPage(
 
   const images = extractImages($, url);
   const links = extractLinks($, url, context.origin);
+
+  // Thumbnails that link to a detail page, so a gallery can show the full-size
+  // image instead of the postage stamp.
+  const imageLinks: { src: string; href: string }[] = [];
+  $("a[href] > img").each((_, element) => {
+    const image = element as Element;
+    const raw = pickImageSrc(image);
+    const href = (image.parent as Element | null)?.attribs?.["href"];
+    if (!raw || !href) return;
+
+    const resolvedSrc = resolveHref(raw, url);
+    const resolvedHref = resolveHref(href, url);
+    if (resolvedSrc && resolvedHref) imageLinks.push({ src: resolvedSrc, href: resolvedHref });
+  });
   const logo = extractLogo($, url, images);
   const contact = extractContact($, url, jsonLd);
   const socials = extractSocials($, url);
@@ -252,11 +336,16 @@ export function extractPage(
   // The content node is cloned so removing claimed blocks cannot affect chrome.
   const contentResult = extractContent($, url);
   const kind = classify(path, meta.title, contentResult.text, meta.description);
+  const identity = extractBrandIdentity($, meta, jsonLd, context.origin);
 
+  // Preferred heading: a real <h1>, then the first heading of any level (legacy
+  // pages often start at <h4>), then the title with the site name removed so we
+  // do not stamp "Acme Ltd | About us" across the hero.
+  const firstHeading = contentResult.headings[0];
   const heroHeading =
     contentResult.headings.find((heading) => heading.level === 1)?.text ??
-    meta.title ??
-    "Untitled page";
+    (firstHeading && firstHeading.text.length >= 8 ? firstHeading.text : undefined) ??
+    dropSiteName(meta.title, identity.name);
 
   // Hero image: the first plausible, non-logo content image.
   const heroImage = images.find(
@@ -280,10 +369,24 @@ export function extractPage(
       actions: extractHeroActions($, url, context.origin),
     },
     contactRows: contactRowsFor(contact),
+    warnings,
   });
 
   if (build.sections.length <= 1 && build.markdown.trim().length === 0) {
     warnings.push("No content could be extracted from this page.");
+  }
+
+  // Pages that are just a photo and a "back" link are gallery detail pages. They
+  // migrate fine, but they are usually better folded into the gallery with this
+  // URL redirected — a decision for the review pass, so flag it rather than guess.
+  if (
+    wordCount(contentResult.text) < 25 &&
+    images.length > 0 &&
+    /\b(back to|previous|next (image|photo)|back to gallery)\b/i.test(contentResult.text)
+  ) {
+    warnings.push(
+      "Looks like a gallery detail page (one image and a back link). Consider folding it into a gallery section and redirecting this URL.",
+    );
   }
 
   return {
@@ -301,6 +404,9 @@ export function extractPage(
     images,
     links,
     sections: build.sections,
+    contact,
+    socials,
+    imageLinks,
     ...(meta.publishedAt ? { publishedAt: meta.publishedAt } : {}),
     ...(meta.updatedAt ? { updatedAt: meta.updatedAt } : {}),
     ...(meta.author ? { author: meta.author } : {}),
@@ -347,6 +453,8 @@ function contactRowsFor(contact: ContactInfo): ContactDetail[] {
 
 export interface ChromeData {
   name: string;
+  /** How the name was determined, so the generator can override a weak guess. */
+  nameFrom: "structured" | "title" | "hostname";
   tagline: string;
   legalName: string;
   logo: ImageRef | null;
@@ -377,6 +485,7 @@ export function extractChrome(html: string, url: string, origin: string): Chrome
 
   return {
     name: identity.name,
+    nameFrom: identity.nameFrom,
     tagline: identity.tagline,
     legalName: identity.legalName,
     logo: extractLogo($, url, images),
@@ -610,6 +719,9 @@ export async function crawlSite(
 
   const cssTexts = homepageHtml ? await collectStylesheets(homepageHtml, options.url) : [];
   logger.info(`Captured ${cssTexts.length} stylesheet(s) for brand detection`);
+
+  // Now that every page is in hand, improve the gallery images.
+  promoteGalleryThumbnails(pages, logger);
 
   // Site-wide identity and imagery, taken from the home page.
   const chrome = homepageHtml ? extractChrome(homepageHtml, options.url, origin) : null;

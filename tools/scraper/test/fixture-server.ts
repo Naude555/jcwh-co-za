@@ -3,12 +3,12 @@ import { readFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 /**
- * Serves `test/fixture` over HTTP so the pipeline can be exercised against a
- * real site. `PORT` inside text fixtures is replaced with the actual port, which
- * lets robots.txt/sitemap.xml stay realistic.
+ * Serves one of the fixture sites in `test/` over HTTP so the pipeline can be
+ * exercised against a real site. `PORT` inside text fixtures is replaced with the
+ * actual port, which lets robots.txt/sitemap.xml stay realistic.
+ *
+ * @param fixtureName subdirectory of `test/` to serve ("fixture" or "fixture-legacy")
  */
-
-const fixtureDir = fileURLToPath(new URL("./fixture/", import.meta.url));
 
 const MIME: Record<string, string> = {
   ".html": "text/html; charset=utf-8",
@@ -28,7 +28,9 @@ export interface FixtureServer {
   close: () => Promise<void>;
 }
 
-export async function startFixtureServer(port = 0): Promise<FixtureServer> {
+export async function startFixtureServer(port = 0, fixtureName = "fixture"): Promise<FixtureServer> {
+  const fixtureDir = fileURLToPath(new URL(`./${fixtureName}/`, import.meta.url));
+
   const server: Server = createServer(async (request, response) => {
     const requestUrl = new URL(request.url ?? "/", `http://${request.headers.host ?? "127.0.0.1"}`);
     let pathname = decodeURIComponent(requestUrl.pathname);

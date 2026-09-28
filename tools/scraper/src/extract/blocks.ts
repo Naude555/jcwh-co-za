@@ -345,11 +345,15 @@ export function extractPricing(scope: Cheerio<Element>): PricingTier[] {
 
 /** Client/partner logos, from a container that advertises them. */
 export function extractLogos(scope: Cheerio<Element>, baseUrl: string): LogoItem[] {
+  // Only look inside containers that are explicitly about clients/partners. A
+  // page's other images (navigation buttons, illustrations, photos) are not a
+  // logo strip, and guessing otherwise produces nonsense on legacy sites.
   const containers = byKeyword(scope, ["client", "partner", "trust", "as-seen", "logos"]);
-  const imageScope = containers.length > 0 ? containers.find("img") : scope.find("img");
+  if (containers.length === 0) return [];
+
   const items: LogoItem[] = [];
 
-  imageScope.each((_, element) => {
+  containers.find("img").each((_, element) => {
     const el = element as Element;
     const raw = el.attribs?.["src"] ?? el.attribs?.["data-src"];
     if (!raw) return;
@@ -392,7 +396,12 @@ export interface BuildContext {
   kind: PageKind;
   hero: HeroInput;
   contactRows: ContactDetail[];
+  /** Warnings the caller surfaces in the migration report. */
+  warnings: string[];
 }
+
+/** Upper bound on images in one gallery block. */
+const MAX_GALLERY_IMAGES = 30;
 
 export interface BuildResult {
   sections: Section[];
@@ -401,21 +410,36 @@ export interface BuildResult {
   blockTypes: string[];
 }
 
-/** Images inside a gallery-like container, or [] when there is no such container. */
+/** Images inside a gallery-like container, or linked thumbnails. */
 function galleryImages(scope: Cheerio<Element>, baseUrl: string): ImageRef[] {
-  const containers = byKeyword(scope, ["gallery", "carousel", "slider", "masonry", "lightbox"]);
-  if (containers.length === 0) return [];
-
   const images: ImageRef[] = [];
-  containers.find("img").each((_, element) => {
-    const el = element as Element;
-    const raw = el.attribs?.["src"] ?? el.attribs?.["data-src"];
+
+  const add = (element: Element) => {
+    const raw = element.attribs?.["src"] ?? element.attribs?.["data-src"];
     const resolved = raw ? resolveHref(raw, baseUrl) : null;
     if (!resolved || images.some((image) => image.src === resolved)) return;
-    images.push({ src: resolved, alt: normaliseWhitespace(el.attribs?.["alt"] ?? "") });
-  });
+    images.push({ src: resolved, alt: normaliseWhitespace(element.attribs?.["alt"] ?? "") });
+  };
 
-  return images;
+  const containers = byKeyword(scope, ["gallery", "carousel", "slider", "masonry", "lightbox"]);
+  if (containers.length > 0) {
+    containers.find("img").each((_, element) => add(element as Element));
+    return images;
+  }
+
+  // No gallery container: on a classic site the gallery is a grid of thumbnails
+  // that each link to a page showing the full image. Four or more linked images is
+  // that pattern, and not a stray illustration in a paragraph.
+  const linked: Element[] = [];
+  scope.find("a[href] > img").each((_, element) => {
+    linked.push(element as Element);
+  });
+  if (linked.length >= 4) {
+    for (const element of linked) add(element);
+    return images;
+  }
+
+  return [];
 }
 
 /**
@@ -489,7 +513,16 @@ export function buildSections(context: BuildContext): BuildResult {
   // --- Gallery -----------------------------------------------------------
   const gallery = galleryImages(scope, context.baseUrl);
   if (gallery.length >= 3) {
-    sections.push({ type: "gallery", heading: "Gallery", columns: 3, images: gallery.slice(0, 9) });
+    // Cap the count so a page with hundreds of product images cannot blow up the
+    // content file — but never silently: dropping photos loses real content.
+    const images = gallery.slice(0, MAX_GALLERY_IMAGES);
+    if (gallery.length > images.length) {
+      context.warnings.push(
+        `Gallery has ${gallery.length} images; kept the first ${images.length}. Add the rest by hand if they matter.`,
+      );
+    }
+
+    sections.push({ type: "gallery", heading: "Gallery", columns: 3, images });
     blockTypes.push("gallery");
     byKeyword(scope, ["gallery", "carousel", "slider", "masonry", "lightbox"]).remove();
   }

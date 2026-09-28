@@ -46,6 +46,28 @@ export function cleanLabel(value: string): string {
   return value.replace(/\s+/g, " ").replace(/^[•·\-–—]\s*/, "").trim();
 }
 
+/**
+ * Remove the site's own name from a page title.
+ *
+ * "JC Wendy Houses | Catalogue" -> "Catalogue", "Catalogue - Acme Ltd" ->
+ * "Catalogue". Used to turn a title into a usable page heading when a legacy page
+ * has no <h1> of its own.
+ */
+export function dropSiteName(title: string, siteName: string): string {
+  const name = siteName.trim().toLowerCase();
+  if (!name) return title.trim();
+
+  // Split on the separators titles use, drop the segment that is the site's own
+  // name, then collapse what is left. No regex escaping of the name is needed.
+  const kept = title
+    .split(/[|•·–—-]/)
+    .map((segment) => segment.trim())
+    .filter((segment) => segment.length > 0 && segment.toLowerCase() !== name);
+
+  const stripped = kept.join(' ').split(' ').filter(Boolean).join(' ');
+  return stripped.length > 0 ? stripped : title.trim();
+}
+
 /** ISO date from the many formats CMSs emit, or undefined. */
 export function parseDate(value: string | undefined): string | undefined {
   if (!value) return undefined;

@@ -119,14 +119,17 @@ function collectColors(css: string, into: Map<string, ColorEvidence>): void {
     }
   }
 
-  // Direct usage in colour-ish properties.
+  // Direct usage in colour-ish properties. `color` and `border-*` are the
+  // strongest signal that a colour is a brand/ink colour (think link and heading
+  // colours); a background is just as often a surface tint.
   for (const match of css.matchAll(
     /(?:^|[;{\s])(background(?:-color)?|color|border(?:-color)?|fill|stroke|--[\w-]+)\s*:\s*([^;{}]+)/gi,
   )) {
     const property = (match[1] ?? "").toLowerCase();
     const value = match[2] ?? "";
     if (!/#|rgb|hsl|oklch/i.test(value)) continue;
-    const weight = BRAND_HINT.test(property) ? 4 : 1;
+
+    const weight = BRAND_HINT.test(property) ? 5 : /^(color|border)/.test(property) ? 2 : 1;
     for (const candidate of value.matchAll(/#[0-9a-f]{3,8}\b|rgba?\([^)]*\)|oklch\([^)]*\)/gi)) {
       add(candidate[0], `${property} declaration`, weight);
     }
@@ -346,10 +349,19 @@ export function buildThemes(evidence: ColorEvidence[], warnings: string[]): Them
     .map((item) => ({ ...item, score: item.count * (1 + (item.weight - 1) * 0.6) }))
     .sort((a, b) => b.score - a.score);
 
-  // Primary: the most prominent colour that actually carries a hue.
-  const primarySource = chromatic[0]?.oklch ?? makeOklch(0.54, 0.19, 262);
+  // Primary: the most prominent colour that actually carries a hue. It should be
+  // usable as an accent surface, so pale tints are only a fallback — otherwise a
+  // site whose only saturated colour is its page background ends up with a
+  // washed-out primary.
+  const accentBand = chromatic.filter((item) => item.oklch.l >= 0.28 && item.oklch.l <= 0.72);
+  const primarySource = (accentBand[0] ?? chromatic[0])?.oklch ?? makeOklch(0.54, 0.19, 262);
+
   if (chromatic.length === 0) {
     warnings.push("No saturated brand colour found; the palette falls back to a neutral blue.");
+  } else if (accentBand.length === 0) {
+    warnings.push(
+      "Every saturated colour found was very light; the most prominent one is used as the primary. Consider setting the brand colours by hand.",
+    );
   }
 
   const primary = clampLightness(primarySource, 0.4, 0.68);
@@ -369,13 +381,22 @@ export function buildThemes(evidence: ColorEvidence[], warnings: string[]): Them
     ? makeOklch(clamp(darkNeutral.l, 0.2, 0.34), Math.min(darkNeutral.c, 0.03), primary.h)
     : makeOklch(0.28, Math.min(primary.c * 0.12, 0.025), primary.h);
 
-  // Surfaces: reuse a very light colour from the site when there is one.
+  // Surfaces: reuse the site's own light tint when it has one, so a cream or
+  // sand-coloured brand carries into the rebuilt site instead of going white.
   const lightSurface = evidence
     .filter((item) => item.oklch.l >= 0.955 && item.oklch.c <= 0.03)
     .sort((a, b) => b.count - a.count)[0]?.oklch;
+  const lightTint = evidence
+    .filter((item) => item.oklch.l >= 0.78 && item.oklch.l <= 0.965 && item.oklch.c >= 0.015)
+    .sort((a, b) => b.count - a.count || b.oklch.c - a.oklch.c)[0]?.oklch;
+
   const base100 = lightSurface ?? makeOklch(1, Math.min(primary.c * 0.04, 0.006), primary.h);
-  const base200 = shiftLightness(base100, -0.026, 1.15);
-  const base300 = shiftLightness(base100, -0.062, 1.25);
+  const base200 = lightTint
+    ? makeOklch(clamp(lightTint.l, 0.9, 0.965), lightTint.c, lightTint.h)
+    : shiftLightness(base100, -0.026, 1.15);
+  const base300 = lightTint
+    ? shiftLightness(base200, -0.055, 0.8)
+    : shiftLightness(base100, -0.062, 1.25);
 
   const light: Record<string, string> = {
     "base-100": formatOklch(base100),

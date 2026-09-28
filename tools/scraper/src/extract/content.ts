@@ -65,6 +65,72 @@ export function normaliseWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+/** Wrap a node found inside `scope` as its own Cheerio collection. */
+function wrap(scope: Cheerio<Element>, element: Element): Cheerio<Element> {
+  return scope.find(element as never) as unknown as Cheerio<Element>;
+}
+
+/**
+ * Tidy tables before conversion.
+ *
+ * GFM tables need a header row and uniform columns, but legacy markup is usually
+ * all `<td>` and often wraps the table in caption rows (`colspan="3"`) and a notes
+ * row at the bottom. Those rows are moved out of the table — before or after it,
+ * where they read as ordinary prose — and the first full-width row is promoted to
+ * `<th>`, so Turndown can emit a real Markdown table.
+ */
+function promoteTableHeaders(root: Cheerio<Element>): void {
+  root.find("table").each((_, tableElement) => {
+    const table = wrap(root, tableElement as Element);
+    if (table.find("th").length > 0) return;
+
+    const rows = table.find("tr");
+    let widest = 0;
+    rows.each((_, row) => {
+      const count = wrap(table, row as Element).children("td, th").length;
+      if (count > widest) widest = count;
+    });
+    if (widest < 2) return;
+
+    // The header is the first full-width row with no colspans.
+    let headerRow: Element | null = null;
+    rows.each((_, row) => {
+      if (headerRow) return;
+      const cells = wrap(table, row as Element).children("td");
+      if (cells.length !== widest) return;
+
+      let hasColspan = false;
+      cells.each((_, cell) => {
+        if ((cell as Element).attribs?.["colspan"]) hasColspan = true;
+      });
+      if (!hasColspan) headerRow = row as Element;
+    });
+    if (!headerRow) return;
+
+    const headerNode = wrap(table, headerRow);
+
+    // Rows that are not full width are captions or notes, not data: move them out
+    // of the table so the Markdown table keeps a uniform shape.
+    const orderedRows = table.find("tr");
+    orderedRows.each((_, row) => {
+      const rowNode = wrap(table, row as Element);
+      if (rowNode.children("td, th").length === widest) return;
+
+      const rowIndex = orderedRows.index(rowNode);
+      const headerIndex = orderedRows.index(headerNode);
+      if (rowIndex < headerIndex) table.before(rowNode);
+      else if (rowIndex > headerIndex) table.after(rowNode);
+    });
+
+    // Promote the header row and put it first.
+    headerNode.children("td").each((_, cell) => {
+      (cell as Element).tagName = "th";
+    });
+    const parent = headerNode.parent();
+    if (parent.length > 0) headerNode.prependTo(parent);
+  });
+}
+
 /** Text of a node as a single normalised line. */
 export function textOf(node: Cheerio<Element>): string {
   return normaliseWhitespace(node.text());
@@ -96,7 +162,11 @@ export function findMainContent($: CheerioAPI): Cheerio<Element> {
     $(selector).each((_, element) => {
       const node = $(element) as unknown as Cheerio<Element>;
       const text = textOf(node);
-      if (text.length < 80) return;
+      // No lower bound on length: a page whose content is mostly images (a gallery)
+      // has very little text, and falling through to <body> would pull the site's
+      // navigation images into the page's content. The semantic bonus below is
+      // what breaks the tie.
+      if (text.length === 0) return;
 
       // Paragraph count is a stronger signal of an article than raw characters.
       const paragraphs = node.find("p").length;
@@ -173,6 +243,8 @@ export function nodeToMarkdown(node: Cheerio<Element>, baseUrl: string): {
     clone.find(selector).remove();
   }
 
+  promoteTableHeaders(clone);
+
   // Make every URL absolute so the Markdown is portable.
   clone.find("a[href]").each((_, anchor) => {
     const el = anchor as Element;
@@ -222,7 +294,10 @@ export function tidyMarkdown(markdown: string): string {
 export function extractHeadings(node: Cheerio<Element>): Heading[] {
   const headings: Heading[] = [];
 
-  node.find("h1, h2, h3").each((_, element) => {
+  // Deep enough for legacy markup that jumps straight to <h4> as a section
+  // heading; consumers filter by level where it matters (the post table of
+  // contents only shows 2 and 3).
+  node.find("h1, h2, h3, h4, h5, h6").each((_, element) => {
     const el = element as Element;
     const text = normaliseWhitespace((node.find(el as never) as unknown as Cheerio<Element>).text());
     if (!text) return;

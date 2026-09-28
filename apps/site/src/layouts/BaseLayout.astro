@@ -41,7 +41,13 @@ const {
   bodyClass = "",
 } = Astro.props;
 
-const pageTitle = title ? `${title} | ${site.name}` : `${site.name} — ${site.tagline}`;
+const pageTitle = title
+  ? // Scraped titles often already carry the site name ("Acme Ltd | Catalogue");
+    // repeating it would read "Acme Ltd | Catalogue | Acme Ltd".
+    title.toLowerCase().includes(site.name.toLowerCase())
+    ? title
+    : `${title} | ${site.name}`
+  : `${site.name} — ${site.tagline}`;
 const canonicalUrl = canonical
   ? absoluteUrl(canonical)
   : new URL(Astro.url.pathname, site.url).href;

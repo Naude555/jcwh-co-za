@@ -1,0 +1,65 @@
+html {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+body {
+	background-image: url(images/back.jpg);
+	background-repeat: repeat;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+.middle {
+	width: 100%;
+	min-height: 400px;
+	background-color: #d8bd89;
+}
+
+.nbar {
+	width: 153px;
+	min-height: 400px;
+	display: inline;
+	float: left;
+}
+
+.content {
+	width: 100%;
+	height: auto;
+	font-family: Georgia, "Times New Roman", Times, serif;
+	color: #000000;
+}
+
+.catable {
+	width: 70%;
+	border: 1px solid #000000;
+	text-align: center;
+}
+
+.catable td {
+	border: 1px solid #000000;
+	background-color: #E7D5B4;
+	padding: 1px;
+}
+
+.galtable {
+	width: 70%;
+	margin-left: auto;
+	margin-right: auto;
+	text-align: center;
+}
+
+.galtable a {
+	color: #67421D;
+	text-decoration: underline;
+}
+
+.galtable a:hover {
+	text-decoration: none;
+}
+
+h4 {
+	border-bottom: 2px solid #67421D;
+}
