@@ -1,0 +1,51 @@
+---
+import Section from "../Section.astro";
+import Button from "../Button.astro";
+import { slugify } from "../../utils/url";
+import type { SectionOf } from "./types";
+
+/** Closing call to action. */
+type Props = SectionOf<"cta">;
+
+const { eyebrow, heading, subheading, body, actions = [], style = "soft" } = Astro.props;
+
+const tones: Record<string, { section: "base" | "muted" | "primary" | "neutral"; button: "primary" | "secondary" | "accent" | "neutral" | "outline" | "ghost" }> = {
+  soft: { section: "muted", button: "primary" },
+  primary: { section: "primary", button: "neutral" },
+  accent: { section: "muted", button: "accent" },
+  neutral: { section: "neutral", button: "primary" },
+};
+
+const tone = tones[style] ?? tones.soft;
+---
+
+<Section id={heading ? slugify(heading) : undefined} tone={tone.section} size="sm">
+  <div class="mx-auto max-w-3xl text-center">
+    {eyebrow && <p class="mb-3 text-sm font-semibold tracking-wide uppercase opacity-70">{eyebrow}</p>}
+
+    {heading && (
+      <h2 class="font-display text-3xl font-semibold tracking-tight md:text-4xl">{heading}</h2>
+    )}
+
+    {subheading && <p class="mt-4 text-lg opacity-80">{subheading}</p>}
+    {body && <p class="mt-3 opacity-75">{body}</p>}
+
+    {
+      actions.length > 0 && (
+        <div class="mt-8 flex flex-wrap justify-center gap-3">
+          {actions.map((action, index) => (
+            <Button
+              href={action.href}
+              style={action.style ?? (index === 0 ? tone.button : "outline")}
+              icon={action.icon}
+              size="lg"
+              external={action.icon === "external"}
+            >
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</Section>

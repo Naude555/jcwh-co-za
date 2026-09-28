@@ -1,0 +1,23 @@
+---
+import Section from "../Section.astro";
+import SectionHeading from "../SectionHeading.astro";
+import { renderMarkdown } from "../../utils/markdown";
+import { slugify } from "../../utils/url";
+import type { SectionOf } from "./types";
+
+/**
+ * Markdown body block. Scraped prose is stored as Markdown, so it is rendered
+ * here with the same `prose` styling used for posts.
+ */
+type Props = SectionOf<"richText">;
+
+const { eyebrow, heading, body, narrow = true } = Astro.props;
+const html = renderMarkdown(body);
+---
+
+<Section id={heading ? slugify(heading) : undefined}>
+  <div class:list={[narrow && "mx-auto max-w-3xl"]}>
+    <SectionHeading eyebrow={eyebrow} heading={heading} />
+    <div class="prose prose-brand mt-6 max-w-none" set:html={html} />
+  </div>
+</Section>

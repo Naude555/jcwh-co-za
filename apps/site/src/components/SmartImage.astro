@@ -1,0 +1,90 @@
+---
+import { Image } from "astro:assets";
+
+/**
+ * Image renderer for migrated content.
+ *
+ * Scraped pages reference images as plain strings ("assets/images/hero.jpg" or
+ * "/images/hero.jpg"), because content data must stay serialisable. This
+ * component resolves those strings against the assets bundled in
+ * src/assets/images so everything gets Astro's Sharp optimisation, and falls
+ * back to a plain <img> for remote or /public files.
+ */
+
+interface Props {
+  src: string;
+  alt?: string;
+  class?: string;
+  width?: number;
+  height?: number;
+  sizes?: string;
+  /** Responsive candidate widths; ignored for SVG and remote images. */
+  widths?: number[];
+  priority?: boolean;
+}
+
+const {
+  src,
+  alt = "",
+  class: className = "",
+  width,
+  height,
+  sizes = "100vw",
+  widths = [400, 800, 1200, 1600],
+  priority = false,
+} = Astro.props;
+
+const modules = import.meta.glob<{ default: ImageMetadata }>(
+  "/src/assets/images/**/*.{png,jpg,jpeg,webp,avif,gif}",
+  { eager: true },
+);
+
+const byKey = new Map<string, ImageMetadata>();
+for (const [path, mod] of Object.entries(modules)) {
+  byKey.set(path, mod.default);
+  byKey.set(path.split("/").pop() ?? path, mod.default);
+}
+
+/** Resolve a content image path to a bundled asset, if we have one. */
+function resolveAsset(value: string): ImageMetadata | undefined {
+  if (!value) return undefined;
+  const file = value.replace(/^\.?\//, "").replace(/^src\//, "").replace(/^public\//, "");
+  return (
+    byKey.get(`/src/${file}`) ??
+    byKey.get(`/src/assets/images/${file}`) ??
+    byKey.get(file) ??
+    byKey.get(file.split("/").pop() ?? file)
+  );
+}
+
+const isRemote = /^(https?:)?\/\//.test(src) || src.startsWith("data:");
+const isSvg = src.toLowerCase().endsWith(".svg");
+const asset = isRemote || isSvg ? undefined : resolveAsset(src);
+const loading = priority ? "eager" : "lazy";
+---
+
+{
+  asset ? (
+    <Image
+      src={asset}
+      alt={alt}
+      widths={widths}
+      sizes={sizes}
+      loading={loading}
+      decoding={priority ? "sync" : "async"}
+      fetchpriority={priority ? "high" : undefined}
+      class={className}
+    />
+  ) : (
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading={loading}
+      decoding="async"
+      fetchpriority={priority ? "high" : undefined}
+      class={className}
+    />
+  )
+}

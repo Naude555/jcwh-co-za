@@ -1,0 +1,21 @@
+{
+  "name": "jcwh",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "new-site": "node scripts/new-site.mjs",
+    "dev": "pnpm --filter ./apps/site dev",
+    "build": "pnpm --filter ./apps/site build",
+    "preview": "pnpm --filter ./apps/site preview",
+    "check": "pnpm --filter ./apps/site check && pnpm --filter ./tools/scraper typecheck",
+    "test": "pnpm --filter ./tools/scraper test",
+    "scrape": "node --env-file-if-exists=.env tools/scraper/src/cli.ts scrape",
+    "generate": "node --env-file-if-exists=.env tools/scraper/src/cli.ts generate",
+    "modernize": "node --env-file-if-exists=.env tools/scraper/src/cli.ts modernize"
+  }
+}

@@ -1,0 +1,92 @@
+---
+import Section from "../Section.astro";
+import SectionHeading from "../SectionHeading.astro";
+import Button from "../Button.astro";
+import SmartImage from "../SmartImage.astro";
+import type { SectionOf } from "./types";
+
+type Props = SectionOf<"hero">;
+
+const {
+  eyebrow,
+  heading,
+  subheading,
+  body,
+  image,
+  actions = [],
+  variant = "split",
+  align = "left",
+} = Astro.props;
+
+const isCentered = variant === "centered" || align === "center";
+const isOverlay = variant === "overlay" && Boolean(image);
+---
+
+<Section size="lg" class={isOverlay ? "relative isolate overflow-hidden" : ""} reveal>
+  {
+    isOverlay && (
+      <>
+        <SmartImage
+          src={image!.src}
+          alt={image!.alt}
+          class="absolute inset-0 -z-10 size-full object-cover"
+          sizes="100vw"
+          priority
+        />
+        <div class="absolute inset-0 -z-10 bg-neutral/70" aria-hidden="true" />
+      </>
+    )
+  }
+
+  <div class:list={["grid items-center gap-12", variant === "split" && image ? "lg:grid-cols-2" : ""]}>
+    <div class:list={[isCentered && "mx-auto max-w-3xl text-center", isOverlay && "text-neutral-content"]}>
+      <SectionHeading
+        eyebrow={eyebrow}
+        heading={heading}
+        subheading={subheading}
+        align={isCentered ? "center" : "left"}
+        as="h1"
+        size="lg"
+      />
+
+      {body && <p class="mt-6 text-lg opacity-75">{body}</p>}
+
+      {
+        actions.length > 0 && (
+          <div
+            class:list={[
+              "mt-8 flex flex-wrap gap-3",
+              isCentered && "justify-center",
+            ]}
+          >
+            {actions.map((action, index) => (
+              <Button
+                href={action.href}
+                style={action.style ?? (index === 0 ? "primary" : "outline")}
+                icon={action.icon}
+                size="lg"
+                external={action.icon === "external"}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        )
+      }
+    </div>
+
+    {
+      image && variant === "split" && (
+        <div class="order-first lg:order-none">
+          <SmartImage
+            src={image.src}
+            alt={image.alt}
+            class="w-full rounded-box shadow-card"
+            sizes="(min-width: 1024px) 40rem, 100vw"
+            priority
+          />
+        </div>
+      )
+    }
+  </div>
+</Section>

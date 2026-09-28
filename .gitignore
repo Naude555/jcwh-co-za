@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+.astro/
+.output/
+build/
+*.tsbuildinfo
+
+# env
+.env
+.env.*
+!.env.example
+
+# scraper artifacts (raw HTML, downloaded assets, extracted JSON)
+tools/scraper/output/
+tools/scraper/storage/
+scrape-output/
+
+# client instances scaffolded next to the base must never be committed into it
+sites/
+
+# editors / os
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.log
+npm-debug.log*
+pnpm-debug.log*

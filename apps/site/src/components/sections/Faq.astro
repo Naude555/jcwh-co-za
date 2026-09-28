@@ -1,0 +1,50 @@
+---
+import Section from "../Section.astro";
+import SectionHeading from "../SectionHeading.astro";
+import { renderMarkdown } from "../../utils/markdown";
+import { slugify } from "../../utils/url";
+import type { SectionOf } from "./types";
+
+/**
+ * Accordion built on native <details>, so it is keyboard accessible and needs
+ * no JavaScript. Answers are Markdown, rendered through the prose styles.
+ */
+type Props = SectionOf<"faq">;
+
+const { eyebrow, heading, subheading, items = [] } = Astro.props;
+const id = heading ? slugify(heading) : "faq";
+---
+
+<Section id={id} tone="muted">
+  <div class="mx-auto max-w-3xl">
+    <SectionHeading eyebrow={eyebrow} heading={heading} subheading={subheading} align="center" />
+
+    <div class="mt-10 divide-y divide-base-300 border-y border-base-300">
+      {
+        items.map((item, index) => (
+          <details class="group py-4" name={id} open={index === 0}>
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-medium">
+              {item.question}
+              <span class="text-primary transition-transform group-open:rotate-45">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  width="20"
+                  height="20"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                  stroke-linecap="round"
+                  aria-hidden="true"
+                >
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </span>
+            </summary>
+            <div class="mt-3 opacity-75" set:html={renderMarkdown(item.answer)} />
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</Section>

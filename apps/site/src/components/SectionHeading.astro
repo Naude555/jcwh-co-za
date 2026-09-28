@@ -1,0 +1,52 @@
+---
+import Icon, { type IconName } from "./Icon.astro";
+
+/**
+ * Eyebrow + heading + subheading stack, shared by every section so vertical
+ * rhythm and type scale stay consistent across the whole site.
+ */
+interface Props {
+  eyebrow?: string;
+  heading?: string;
+  subheading?: string;
+  align?: "left" | "center";
+  as?: "h1" | "h2" | "h3";
+  size?: "md" | "lg";
+  class?: string;
+}
+
+const {
+  eyebrow,
+  heading,
+  subheading,
+  align = "left",
+  as: Tag = "h2",
+  size = "md",
+  class: className = "",
+} = Astro.props;
+---
+
+{
+  (eyebrow || heading || subheading) && (
+    <div
+      class:list={[
+        "max-w-3xl",
+        align === "center" ? "mx-auto text-center" : "",
+        className,
+      ]}
+    >
+      {eyebrow && (
+        <p class="mb-3 inline-flex items-center gap-2 text-sm font-semibold tracking-wide text-primary uppercase">
+          <Icon name={"sparkles" as IconName} size={16} />
+          {eyebrow}
+        </p>
+      )}
+      {heading && (
+        <Tag class:list={[size === "lg" ? "text-4xl md:text-5xl" : "text-3xl md:text-4xl"]}>
+          {heading}
+        </Tag>
+      )}
+      {subheading && <p class="mt-4 text-lg opacity-70">{subheading}</p>}
+    </div>
+  )
+}

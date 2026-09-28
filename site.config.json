@@ -1,0 +1,14 @@
+{
+  "$schema": "./docs/site.config.schema.json",
+  "slug": "base-template",
+  "client": "Base template",
+  "sourceUrl": "",
+  "base": {
+    "version": "0.1.0",
+    "tag": "base-v0.1.0"
+  },
+  "status": "template",
+  "deployTarget": "",
+  "notes": "This is the base template. Client instances are created with `pnpm new-site <slug>`.",
+  "runs": []
+}

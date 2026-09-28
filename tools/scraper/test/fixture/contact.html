@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Contact us | Brightside Dental</title>
+    <meta name="description" content="Call, email or visit Brightside Dental at 12 Park Row, Leeds LS1 5HD." />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a href="/index.html" class="logo"><img src="/logo.svg" alt="Brightside Dental logo" width="160" height="40" /></a>
+      <nav aria-label="Main">
+        <ul>
+          <li><a href="/index.html">Home</a></li>
+          <li><a href="/about.html">About us</a></li>
+          <li><a href="/contact.html">Contact</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Contact Brightside Dental</h1>
+      <p>Call us, email us, or use the form below and we will reply the same working day.</p>
+
+      <ul class="contact-details">
+        <li>Telephone: <a href="tel:+441132223333">0113 222 3333</a></li>
+        <li>Email: <a href="mailto:hello@brightside.example">hello@brightside.example</a></li>
+        <li>Address: <address>12 Park Row, Leeds LS1 5HD</address></li>
+      </ul>
+
+      <h2>Opening hours</h2>
+      <ul>
+        <li>Monday - Friday 8am - 6pm</li>
+        <li>Saturday 9am - 1pm</li>
+        <li>Sunday closed</li>
+      </ul>
+
+      <form action="/submit" method="post">
+        <label for="name">Your name</label>
+        <input id="name" name="name" type="text" required />
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required />
+        <label for="message">How can we help?</label>
+        <textarea id="message" name="message" rows="4"></textarea>
+        <button type="submit">Send message</button>
+      </form>
+    </main>
+
+    <footer class="footer">
+      <p>© 2026 Brightside Dental Ltd. All rights reserved.</p>
+    </footer>
+  </body>
+</html>

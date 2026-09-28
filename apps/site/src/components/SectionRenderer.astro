@@ -1,0 +1,57 @@
+---
+import type { PageSection } from "./sections/types";
+import Hero from "./sections/Hero.astro";
+import RichText from "./sections/RichText.astro";
+import Features from "./sections/Features.astro";
+import ImageText from "./sections/ImageText.astro";
+import Stats from "./sections/Stats.astro";
+import Gallery from "./sections/Gallery.astro";
+import Logos from "./sections/Logos.astro";
+import Testimonials from "./sections/Testimonials.astro";
+import Faq from "./sections/Faq.astro";
+import Steps from "./sections/Steps.astro";
+import Pricing from "./sections/Pricing.astro";
+import Team from "./sections/Team.astro";
+import Cta from "./sections/Cta.astro";
+import Contact from "./sections/Contact.astro";
+import Embed from "./sections/Embed.astro";
+
+/**
+ * Maps a section's `type` to its component. Adding a new block means adding it
+ * to the schema in src/content.config.ts, to this map, and nothing else.
+ */
+const components = {
+  hero: Hero,
+  richText: RichText,
+  features: Features,
+  imageText: ImageText,
+  stats: Stats,
+  gallery: Gallery,
+  logos: Logos,
+  testimonials: Testimonials,
+  faq: Faq,
+  steps: Steps,
+  pricing: Pricing,
+  team: Team,
+  cta: Cta,
+  contact: Contact,
+  embed: Embed,
+} as const;
+
+interface Props {
+  sections: PageSection[];
+}
+
+const { sections = [] } = Astro.props;
+---
+
+{
+  sections.map((section) => {
+    const Component = components[section.type];
+    // `section` is a discriminated union and `Component` is a union of component
+    // types, so TS cannot correlate the two. Each component's props mirror its
+    // schema branch (see sections/types.ts), which is what keeps this safe.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return Component ? <Component {...(section as any)} /> : null;
+  })
+}

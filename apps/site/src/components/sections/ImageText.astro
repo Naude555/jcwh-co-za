@@ -1,0 +1,71 @@
+---
+import Section from "../Section.astro";
+import SectionHeading from "../SectionHeading.astro";
+import Button from "../Button.astro";
+import SmartImage from "../SmartImage.astro";
+import Icon from "../Icon.astro";
+import { slugify } from "../../utils/url";
+import type { SectionOf } from "./types";
+
+/** Two-column text + media block; `reverse` flips the sides on large screens. */
+type Props = SectionOf<"imageText">;
+
+const {
+  eyebrow,
+  heading,
+  subheading,
+  body,
+  image,
+  bullets = [],
+  actions = [],
+  reverse = false,
+} = Astro.props;
+---
+
+<Section id={heading ? slugify(heading) : undefined}>
+  <div class="grid items-center gap-12 lg:grid-cols-2">
+    <div class:list={[reverse && "lg:order-2"]}>
+      <SectionHeading eyebrow={eyebrow} heading={heading} subheading={subheading} />
+
+      {body && <p class="mt-6 opacity-75">{body}</p>}
+
+      {
+        bullets.length > 0 && (
+          <ul class="mt-6 space-y-2.5">
+            {bullets.map((bullet) => (
+              <li class="flex items-start gap-2.5">
+                <Icon name="check-circle" size={20} class="mt-0.5 text-primary" />
+                <span class="opacity-80">{bullet}</span>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+
+      {
+        actions.length > 0 && (
+          <div class="mt-8 flex flex-wrap gap-3">
+            {actions.map((action, index) => (
+              <Button
+                href={action.href}
+                style={action.style ?? (index === 0 ? "primary" : "ghost")}
+                icon={action.icon}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        )
+      }
+    </div>
+
+    <div class:list={["reveal-on-scroll", reverse && "lg:order-1"]}>
+      <SmartImage
+        src={image.src}
+        alt={image.alt || heading || ""}
+        class="w-full rounded-box shadow-card"
+        sizes="(min-width: 1024px) 36rem, 100vw"
+      />
+    </div>
+  </div>
+</Section>

@@ -1,0 +1,82 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Section from "../components/Section.astro";
+import SectionRenderer from "../components/SectionRenderer.astro";
+import Breadcrumbs from "../components/Breadcrumbs.astro";
+import { idToPath } from "../utils/url";
+
+/**
+ * Every migrated page lives in the `pages` collection and is composed of
+ * section blocks, so one route renders the whole site and the original URL
+ * structure is preserved by the collection id (`about/team` -> /about/team).
+ */
+export async function getStaticPaths() {
+  const pages = await getCollection("pages", ({ data }) => !data.draft);
+
+  return pages.map((entry) => {
+    const path = idToPath(entry.data.slug ?? entry.id);
+    return {
+      params: { slug: path === "/" ? undefined : path.replace(/^\//, "") },
+      props: { entry },
+    };
+  });
+}
+
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+
+/** Build a breadcrumb trail from the URL, honouring any explicit override. */
+function autoBreadcrumbs(id: string): { label: string; href: string }[] {
+  const path = idToPath(id);
+  if (path === "/") return [];
+  const segments = path.split("/").filter(Boolean);
+  const crumbs = [{ label: "Home", href: "/" }];
+  segments.forEach((segment, index) => {
+    crumbs.push({
+      label: segment
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, (letter) => letter.toUpperCase()),
+      href: `/${segments.slice(0, index + 1).join("/")}`,
+    });
+  });
+  return crumbs;
+}
+
+const breadcrumbs = data.breadcrumbs.length
+  ? data.breadcrumbs.map((crumb) => ({ label: crumb.label, href: crumb.href }))
+  : autoBreadcrumbs(data.slug ?? entry.id);
+
+const hasBody = Boolean(entry.body?.trim());
+---
+
+<BaseLayout
+  title={data.seo?.title ?? data.title}
+  description={data.seo?.description ?? data.description}
+  image={data.seo?.image}
+  noindex={data.seo?.noindex || data.draft}
+  canonical={data.slug ? `/${data.slug}` : undefined}
+  modifiedTime={data.updatedAt}
+  structuredData={data.source?.url ? { "@type": "CreativeWork", sameAs: data.source.url } : undefined}
+>
+  {
+    breadcrumbs.length > 1 && (
+      <div class="container-page pt-6">
+        <Breadcrumbs items={breadcrumbs} />
+      </div>
+    )
+  }
+
+  <SectionRenderer sections={data.sections} />
+
+  {
+    hasBody && (
+      <Section>
+        <article class="prose prose-brand mx-auto max-w-3xl">
+          <Content />
+        </article>
+      </Section>
+    )
+  }
+</BaseLayout>

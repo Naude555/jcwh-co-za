@@ -1,0 +1,53 @@
+---
+/**
+ * Vertical rhythm + gutter wrapper used by every section block.
+ * `tone` maps onto daisyUI surface colours, `bleed` opts out of the gutter for
+ * full-width media.
+ */
+interface Props {
+  id?: string;
+  tone?: "base" | "muted" | "primary" | "neutral" | "soft";
+  size?: "sm" | "md" | "lg";
+  bleed?: boolean;
+  reveal?: boolean;
+  class?: string;
+}
+
+const {
+  id,
+  tone = "base",
+  size = "md",
+  bleed = false,
+  reveal = false,
+  class: className = "",
+} = Astro.props;
+
+const tones: Record<string, string> = {
+  base: "bg-base-100 text-base-content",
+  muted: "bg-base-200 text-base-content",
+  soft: "bg-base-200/60 text-base-content",
+  primary: "bg-primary text-primary-content",
+  neutral: "bg-neutral text-neutral-content",
+};
+
+const sizes: Record<string, string> = {
+  sm: "py-12 md:py-16",
+  md: "py-section",
+  lg: "py-section md:py-section-lg",
+};
+---
+
+<section
+  id={id}
+  class:list={[tones[tone], sizes[size], reveal && "reveal-on-scroll", className]}
+>
+  {
+    bleed ? (
+      <slot />
+    ) : (
+      <div class="container-page">
+        <slot />
+      </div>
+    )
+  }
+</section>

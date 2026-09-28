@@ -1,0 +1,128 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Section from "../../components/Section.astro";
+import SmartImage from "../../components/SmartImage.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import { absoluteUrl } from "../../data/site";
+
+export async function getStaticPaths() {
+  const posts = await getCollection("posts", ({ data }) => !data.draft);
+  return posts.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content, headings } = await render(entry);
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+
+const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
+---
+
+<BaseLayout
+  title={data.seo?.title ?? data.title}
+  description={data.seo?.description ?? data.description}
+  image={data.seo?.image ?? data.cover?.src}
+  noindex={data.seo?.noindex || data.draft}
+  type="article"
+  publishedTime={data.publishedAt}
+  modifiedTime={data.updatedAt}
+  canonical={`/posts/${entry.id}`}
+  structuredData={[
+    {
+      "@type": "BlogPosting",
+      headline: data.title,
+      description: data.description,
+      datePublished: data.publishedAt.toISOString(),
+      dateModified: (data.updatedAt ?? data.publishedAt).toISOString(),
+      author: data.author ? { "@type": "Person", name: data.author } : undefined,
+      image: data.cover ? absoluteUrl(data.cover.src) : undefined,
+      mainEntityOfPage: absoluteUrl(`/posts/${entry.id}`),
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: absoluteUrl("/") },
+        { "@type": "ListItem", position: 2, name: "News", item: absoluteUrl("/posts") },
+        { "@type": "ListItem", position: 3, name: data.title, item: absoluteUrl(`/posts/${entry.id}`) },
+      ],
+    },
+  ]}
+>
+  <article>
+    <Section size="sm">
+      <div class="mx-auto max-w-3xl">
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "News", href: "/posts" },
+            { label: data.title },
+          ]}
+        />
+
+        <h1 class="mt-6 font-display text-4xl font-semibold tracking-tight md:text-5xl">
+          {data.title}
+        </h1>
+
+        <p class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm opacity-60">
+          <time datetime={data.publishedAt.toISOString()}>{formatDate(data.publishedAt)}</time>
+          {data.author && <span>· {data.author}</span>}
+          {data.updatedAt && <span>· updated {formatDate(data.updatedAt)}</span>}
+        </p>
+
+        {data.description && <p class="mt-6 text-lg opacity-80">{data.description}</p>}
+      </div>
+
+      {
+        data.cover && (
+          <div class="mx-auto mt-10 max-w-4xl">
+            <SmartImage
+              src={data.cover.src}
+              alt={data.cover.alt || data.title}
+              class="w-full rounded-box shadow-card"
+              sizes="(min-width: 1024px) 56rem, 100vw"
+              priority
+            />
+          </div>
+        )
+      }
+    </Section>
+
+    <Section size="sm" class="pt-0">
+      <div
+        class:list={[
+          "mx-auto",
+          toc.length >= 3 ? "grid gap-12 lg:grid-cols-[1fr_14rem] lg:items-start max-w-5xl" : "max-w-3xl",
+        ]}
+      >
+        <div class="prose prose-brand max-w-none">
+          <Content />
+        </div>
+
+        {
+          toc.length >= 3 && (
+            <nav class="card card-border sticky top-24 hidden border-base-300 bg-base-100 lg:block" aria-label="On this page">
+              <div class="card-body gap-2 py-5">
+                <p class="text-xs font-semibold tracking-wide uppercase opacity-60">On this page</p>
+                <ul class="space-y-1.5 text-sm">
+                  {toc.map((heading) => (
+                    <li class:list={[heading.depth === 3 && "pl-3"]}>
+                      <a href={`#${heading.slug}`} class="link-underline opacity-75 hover:opacity-100">
+                        {heading.text}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </nav>
+          )
+        }
+      </div>
+    </Section>
+  </article>
+</BaseLayout>

@@ -1,0 +1,52 @@
+---
+import Icon from "./Icon.astro";
+
+/**
+ * Breadcrumb trail plus the matching BreadcrumbList structured data, so the
+ * hierarchy of a migrated page is still described to search engines.
+ */
+interface Props {
+  items: { label: string; href?: string }[];
+  class?: string;
+}
+
+const { items, class: className = "" } = Astro.props;
+
+const trail = items.filter((item) => item?.label);
+const origin = Astro.site ?? new URL(Astro.url.origin);
+const jsonLd =
+  trail.length > 0
+    ? {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: trail.map((item, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: item.label,
+          item: item.href ? new URL(item.href, origin).href : undefined,
+        })),
+      }
+    : null;
+---
+
+{
+  trail.length > 0 && (
+    <nav aria-label="Breadcrumb" class:list={["breadcrumbs text-sm", className]}>
+      <ul>
+        {trail.map((item, index) => (
+          <li>
+            {item.href && index < trail.length - 1 ? (
+              <a href={item.href} class="inline-flex items-center gap-1.5 opacity-70 hover:opacity-100">
+                {index === 0 && <Icon name="arrow-left" size={14} />}
+                {item.label}
+              </a>
+            ) : (
+              <span class="opacity-90">{item.label}</span>
+            )}
+          </li>
+        ))}
+      </ul>
+      {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    </nav>
+  )
+}

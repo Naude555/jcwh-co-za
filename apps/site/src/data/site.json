@@ -1,0 +1,48 @@
+{
+  "name": "Your Company",
+  "legalName": "Your Company Ltd.",
+  "tagline": "Modern websites, built to last",
+  "description": "A fast, accessible, search-friendly website rebuilt with Astro, Tailwind CSS and daisyUI.",
+  "url": "https://example.com",
+  "locale": "en",
+  "logo": {
+    "src": "",
+    "alt": "Your Company logo",
+    "text": "Your Company"
+  },
+  "contact": {
+    "email": "hello@example.com",
+    "phone": "",
+    "address": {
+      "street": "",
+      "city": "",
+      "region": "",
+      "postalCode": "",
+      "country": ""
+    },
+    "hours": []
+  },
+  "socials": [],
+  "navigation": {
+    "primary": [{ "label": "Home", "href": "/" }],
+    "actions": [],
+    "footer": []
+  },
+  "footer": {
+    "tagline": "",
+    "columns": [],
+    "legal": "",
+    "credit": ""
+  },
+  "theme": {
+    "light": "brand",
+    "dark": "brand-dark",
+    "fonts": { "heading": "Plus Jakarta Sans", "body": "Inter" },
+    "palette": {}
+  },
+  "source": {
+    "url": "",
+    "scrapedAt": null,
+    "pagesMigrated": 0
+  }
+}

@@ -1,0 +1,23 @@
+---
+import Icon from "./Icon.astro";
+
+/**
+ * Light/dark switch.
+ *
+ * The persisted choice is applied by an inline script in BaseLayout (before
+ * first paint, so there is no flash); this control only toggles that state.
+ * The icon swap relies on the `dark:` variant, which global.css binds to the
+ * dark daisyUI theme.
+ */
+---
+
+<button
+  type="button"
+  class="btn btn-ghost btn-circle"
+  data-theme-toggle
+  aria-label="Switch between light and dark theme"
+  aria-pressed="false"
+>
+  <Icon name="moon" size={20} class="dark:hidden" />
+  <Icon name="sun" size={20} class="hidden dark:block" />
+</button>

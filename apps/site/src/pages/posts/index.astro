@@ -1,0 +1,111 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Section from "../../components/Section.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import SmartImage from "../../components/SmartImage.astro";
+import Icon from "../../components/Icon.astro";
+import { absoluteUrl } from "../../data/site";
+
+const posts = (
+  await getCollection("posts", ({ data }) => !data.draft)
+).sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf());
+
+const [featured, ...rest] = posts;
+const formatDate = (date: Date) =>
+  date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+---
+
+<BaseLayout
+  title="News"
+  description="Latest articles, updates and insights."
+  structuredData={{
+    "@type": "CollectionPage",
+    name: "News",
+    url: absoluteUrl("/posts"),
+  }}
+>
+  <Section>
+    <SectionHeading
+      eyebrow="News"
+      heading="Articles & updates"
+      subheading="Everything we have published, newest first."
+      size="lg"
+      as="h1"
+    />
+
+    {
+      posts.length === 0 && (
+        <p class="mt-10 opacity-70">
+          No posts yet. Scraped articles land in <code>src/content/posts/</code>.
+        </p>
+      )
+    }
+
+    {
+      featured && (
+        <article class="card card-border mt-12 border-base-300 bg-base-100 lg:card-side">
+          {featured.data.cover && (
+            <figure class="lg:w-1/2">
+              <SmartImage
+                src={featured.data.cover.src}
+                alt={featured.data.cover.alt || featured.data.title}
+                class="h-full w-full object-cover"
+                sizes="(min-width: 1024px) 36rem, 100vw"
+                priority
+              />
+            </figure>
+          )}
+          <div class="card-body lg:w-1/2">
+            <p class="text-sm opacity-60">
+              Featured · <time datetime={featured.data.publishedAt.toISOString()}>
+                {formatDate(featured.data.publishedAt)}
+              </time>
+            </p>
+            <h2 class="card-title text-2xl">
+              <a href={`/posts/${featured.id}`} class="link-underline">
+                {featured.data.title}
+              </a>
+            </h2>
+            <p class="opacity-70">{featured.data.description}</p>
+            <div class="card-actions mt-2">
+              <a href={`/posts/${featured.id}`} class="btn btn-primary btn-sm">
+                Read article <Icon name="arrow-right" size={16} />
+              </a>
+            </div>
+          </div>
+        </article>
+      )
+    }
+
+    <ul class="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {
+        rest.map((post) => (
+          <li class="card card-border border-base-300 bg-base-100 card-interactive">
+            {post.data.cover && (
+              <figure>
+                <SmartImage
+                  src={post.data.cover.src}
+                  alt={post.data.cover.alt || post.data.title}
+                  class="aspect-16/9 w-full object-cover"
+                  sizes="(min-width: 1024px) 22rem, 90vw"
+                />
+              </figure>
+            )}
+            <div class="card-body">
+              <time class="text-xs opacity-60" datetime={post.data.publishedAt.toISOString()}>
+                {formatDate(post.data.publishedAt)}
+              </time>
+              <h2 class="card-title text-lg">
+                <a href={`/posts/${post.id}`} class="link-underline">
+                  {post.data.title}
+                </a>
+              </h2>
+              <p class="text-sm opacity-70">{post.data.description}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+</BaseLayout>

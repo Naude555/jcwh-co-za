@@ -1,0 +1,65 @@
+---
+import Section from "../Section.astro";
+import SectionHeading from "../SectionHeading.astro";
+import SmartImage from "../SmartImage.astro";
+import Icon from "../Icon.astro";
+import { slugify } from "../../utils/url";
+import type { SectionOf } from "./types";
+
+/** Customer quotes pulled from the source site's testimonials/reviews markup. */
+type Props = SectionOf<"testimonials">;
+
+const { eyebrow, heading, subheading, columns = 3, items = [] } = Astro.props;
+
+const colClass =
+  columns === 1
+    ? "sm:grid-cols-1"
+    : columns === 2
+      ? "sm:grid-cols-2"
+      : "sm:grid-cols-2 lg:grid-cols-3";
+---
+
+<Section id={heading ? slugify(heading) : undefined} tone="muted">
+  <SectionHeading eyebrow={eyebrow} heading={heading} subheading={subheading} align="center" />
+
+  <ul class:list={["mt-12 grid gap-6", colClass]}>
+    {
+      items.map((item) => (
+        <li class="card card-border border-base-300 bg-base-100 reveal-on-scroll">
+          <div class="card-body gap-4">
+            <Icon name="quote" size={28} class="text-primary/40" />
+
+            {item.rating && (
+              <p class="flex gap-0.5 text-warning" aria-label={`${item.rating} out of 5`}>
+                {Array.from({ length: Math.round(item.rating) }).map(() => (
+                  <Icon name="star" size={16} />
+                ))}
+              </p>
+            )}
+
+            <blockquote class="text-base leading-relaxed">
+              <p>{item.quote}</p>
+            </blockquote>
+
+            <figcaption class="mt-auto flex items-center gap-3 border-t border-base-300 pt-4">
+              {item.avatar && (
+                <SmartImage
+                  src={item.avatar.src}
+                  alt={item.avatar.alt || item.name}
+                  class="size-10 rounded-full object-cover"
+                  sizes="2.5rem"
+                />
+              )}
+              <span class="text-sm">
+                <span class="block font-semibold">{item.name}</span>
+                <span class="block opacity-60">
+                  {[item.role, item.company].filter(Boolean).join(", ")}
+                </span>
+              </span>
+            </figcaption>
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+</Section>

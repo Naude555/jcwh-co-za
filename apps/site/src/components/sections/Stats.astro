@@ -1,0 +1,42 @@
+---
+import Section from "../Section.astro";
+import SectionHeading from "../SectionHeading.astro";
+import Icon from "../Icon.astro";
+import type { SectionOf } from "./types";
+
+/** Counters / key figures. Rendered as a definition-style list for a11y. */
+type Props = SectionOf<"stats">;
+
+const { eyebrow, heading, subheading, items = [] } = Astro.props;
+---
+
+<Section tone="muted" size="sm">
+  <SectionHeading eyebrow={eyebrow} heading={heading} subheading={subheading} align="center" />
+
+  <dl class="mt-10 grid gap-8 text-center sm:grid-cols-2 lg:grid-cols-4">
+    {
+      items.map((item) => (
+        <div class="reveal-on-scroll">
+          <dt class="sr-only">{item.label}</dt>
+          <dd>
+            <span class="block font-display text-4xl font-bold text-primary md:text-5xl">
+              {item.value}
+            </span>
+            <span class="mt-2 block font-medium">{item.label}</span>
+            {item.description && (
+              <span class="mt-1 block text-sm opacity-60">{item.description}</span>
+            )}
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+
+  {
+    items.length === 0 && (
+      <p class="mt-6 flex items-center justify-center gap-2 text-sm opacity-60">
+        <Icon name="chart" size={16} /> No figures captured for this section yet.
+      </p>
+    )
+  }
+</Section>

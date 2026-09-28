@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://jcwh.local/site.config.schema.json",
+  "title": "Site instance manifest",
+  "description": "Identifies one client site built from the base template, which base version it came from, and what has been done to it so far. Written by scripts/new-site.mjs and updated by the scraper CLI.",
+  "type": "object",
+  "required": ["slug", "status"],
+  "properties": {
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]*$",
+      "description": "Kebab-case directory/instance name."
+    },
+    "client": {
+      "type": "string",
+      "description": "Human-readable client name."
+    },
+    "sourceUrl": {
+      "type": "string",
+      "description": "The live site being modernized."
+    },
+    "base": {
+      "type": "object",
+      "description": "Which base template this instance was created from.",
+      "properties": {
+        "version": { "type": "string" },
+        "tag": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": ["template", "scaffolded", "crawled", "generated", "reviewed", "launched"],
+      "description": "Where this instance is in the workflow documented in docs/WORKFLOW.md."
+    },
+    "deployTarget": {
+      "type": "string",
+      "description": "Where this site is deployed, e.g. netlify:client-site or the host name."
+    },
+    "notes": { "type": "string" },
+    "runs": {
+      "type": "array",
+      "description": "Most recent runs first, capped by the CLI.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "at": { "type": "string", "format": "date-time" },
+          "command": { "type": "string" },
+          "pages": { "type": "integer" },
+          "posts": { "type": "integer" },
+          "services": { "type": "integer" },
+          "redirects": { "type": "integer" }
+        },
+        "required": ["at", "command"]
+      }
+    }
+  }
+}

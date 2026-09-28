@@ -1,0 +1,65 @@
+---
+import Section from "../Section.astro";
+import SectionHeading from "../SectionHeading.astro";
+import Icon, { type IconName } from "../Icon.astro";
+import SmartImage from "../SmartImage.astro";
+import { slugify } from "../../utils/url";
+import type { SectionOf } from "./types";
+
+type Props = SectionOf<"features">;
+
+const { eyebrow, heading, subheading, columns = 3, items = [] } = Astro.props;
+
+const colClass =
+  columns === 1
+    ? "sm:grid-cols-1"
+    : columns === 2
+      ? "sm:grid-cols-2"
+      : columns === 4
+        ? "sm:grid-cols-2 lg:grid-cols-4"
+        : "sm:grid-cols-2 lg:grid-cols-3";
+---
+
+<Section id={heading ? slugify(heading) : undefined} tone="base">
+  <SectionHeading
+    eyebrow={eyebrow}
+    heading={heading}
+    subheading={subheading}
+    align="center"
+  />
+
+  <ul class:list={["mt-12 grid gap-6", colClass]}>
+    {
+      items.map((item) => (
+        <li class="card card-border border-base-300 bg-base-100 card-interactive reveal-on-scroll">
+          <div class="card-body gap-3">
+            {item.image ? (
+              <SmartImage
+                src={item.image.src}
+                alt={item.image.alt || item.title}
+                class="h-12 w-12 rounded-xl object-cover"
+                sizes="3rem"
+              />
+            ) : (
+              <span class="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
+                <Icon name={(item.icon ?? "check") as IconName} size={22} />
+              </span>
+            )}
+
+            <h3 class="card-title text-lg">
+              {item.href ? (
+                <a href={item.href} class="link-underline">
+                  {item.title}
+                </a>
+              ) : (
+                item.title
+              )}
+            </h3>
+
+            {item.body && <p class="opacity-70">{item.body}</p>}
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+</Section>

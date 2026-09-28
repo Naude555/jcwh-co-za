@@ -1,0 +1,35 @@
+---
+import Section from "../Section.astro";
+import SectionHeading from "../SectionHeading.astro";
+import Icon, { type IconName } from "../Icon.astro";
+import { slugify } from "../../utils/url";
+import type { SectionOf } from "./types";
+
+/** Numbered process/how-it-works block. */
+type Props = SectionOf<"steps">;
+
+const { eyebrow, heading, subheading, items = [] } = Astro.props;
+---
+
+<Section id={heading ? slugify(heading) : undefined}>
+  <SectionHeading eyebrow={eyebrow} heading={heading} subheading={subheading} align="center" />
+
+  <ol class="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+    {
+      items.map((item, index) => (
+        <li class="reveal-on-scroll">
+          <span class="flex items-center gap-3">
+            <span class="grid size-10 place-items-center rounded-full bg-primary text-sm font-bold text-primary-content">
+              {index + 1}
+            </span>
+            {item.icon && (
+              <Icon name={item.icon as IconName} size={20} class="text-primary" />
+            )}
+          </span>
+          <h3 class="mt-4 text-lg font-semibold">{item.title}</h3>
+          {item.body && <p class="mt-2 text-sm opacity-70">{item.body}</p>}
+        </li>
+      ))
+    }
+  </ol>
+</Section>

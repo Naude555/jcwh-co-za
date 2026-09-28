@@ -1,0 +1,52 @@
+:root {
+  --brand-primary: #0f766e;
+  --brand-primary-dark: #115e59;
+  --brand-secondary: #0ea5e9;
+  --brand-accent: #f59e0b;
+  --brand-ink: #0f172a;
+  --brand-surface: #f8fafc;
+  --brand-font-body: "Work Sans", sans-serif;
+  --brand-font-heading: "Fraunces", serif;
+  --radius-card: 14px;
+}
+
+body {
+  font-family: var(--brand-font-body);
+  color: var(--brand-ink);
+  background: #ffffff;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--brand-font-heading);
+  color: var(--brand-ink);
+}
+
+.button-primary {
+  background-color: #0f766e;
+  border-radius: 14px;
+  color: #ffffff;
+}
+
+.button-secondary {
+  background-color: #0ea5e9;
+  border-radius: 14px;
+  color: #ffffff;
+}
+
+.panel {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.footer {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+.badge-accent {
+  background-color: #f59e0b;
+  color: #0f172a;
+}

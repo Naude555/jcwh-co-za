@@ -1,0 +1,142 @@
+---
+import Icon from "./Icon.astro";
+import SmartImage from "./SmartImage.astro";
+import { site, logoText, hasLogo, addressLines, contactDetails } from "../data/site";
+
+const columns = site.footer.columns ?? [];
+const details = contactDetails();
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-base-300/60 bg-base-200/50">
+  <div class="container-page py-14 lg:py-16">
+    <div class="grid gap-10 lg:grid-cols-5">
+      <div class="lg:col-span-2">
+        <a
+          href="/"
+          class="flex items-center gap-2.5 font-display text-lg font-bold tracking-tight"
+          aria-label={`${site.name} — home`}
+        >
+          {
+            hasLogo() ? (
+              <SmartImage
+                src={site.logo.src}
+                alt={site.logo.alt || site.name}
+                width={150}
+                height={40}
+                class="h-8 w-auto"
+              />
+            ) : (
+              <>
+                <span
+                  class="grid size-9 place-items-center rounded-xl bg-primary text-primary-content"
+                  aria-hidden="true"
+                >
+                  {logoText().slice(0, 1)}
+                </span>
+                <span>{logoText()}</span>
+              </>
+            )
+          }
+        </a>
+
+        {(site.footer.tagline || site.tagline) && (
+          <p class="mt-4 max-w-sm text-sm opacity-70">
+            {site.footer.tagline || site.tagline}
+          </p>
+        )}
+
+        <ul class="mt-5 space-y-2 text-sm">
+          {
+            details.map((detail) => (
+              <li class="flex items-start gap-2 opacity-80">
+                <Icon name={detail.icon as any} size={16} class="mt-0.5 text-primary" />
+                {detail.href ? (
+                  <a href={detail.href} class="link-underline">
+                    {detail.value}
+                  </a>
+                ) : (
+                  <span>{detail.value}</span>
+                )}
+              </li>
+            ))
+          }
+        </ul>
+
+        {
+          site.socials.length > 0 && (
+            <ul class="mt-5 flex flex-wrap gap-2">
+              {site.socials.map((social) => (
+                <li>
+                  <a
+                    href={social.href}
+                    class="btn btn-ghost btn-sm"
+                    rel="noopener noreferrer me"
+                    target="_blank"
+                  >
+                    {social.label}
+                    <Icon name="arrow-up-right" size={14} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </div>
+
+      {
+        columns.length > 0
+          ? columns.map((column) => (
+              <nav aria-label={column.title}>
+                <h2 class="font-display text-sm font-semibold tracking-wide uppercase opacity-60">
+                  {column.title}
+                </h2>
+                <ul class="mt-4 space-y-2.5 text-sm">
+                  {column.links.map((link) => (
+                    <li>
+                      <a href={link.href} class="link-underline opacity-80 hover:opacity-100">
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ))
+          : // When the source footer had no headings to group by, we still keep the
+            // links rather than dropping them.
+            site.navigation.footer.length > 0 && (
+              <nav aria-label="Footer">
+                <h2 class="font-display text-sm font-semibold tracking-wide uppercase opacity-60">
+                  More
+                </h2>
+                <ul class="mt-4 space-y-2.5 text-sm">
+                  {site.navigation.footer.map((link) => (
+                    <li>
+                      <a href={link.href} class="link-underline opacity-80 hover:opacity-100">
+                        {link.label}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            )
+      }
+    </div>
+
+    <div
+      class="mt-12 flex flex-col gap-3 border-t border-base-300 pt-6 text-sm md:flex-row md:items-center md:justify-between"
+    >
+      <p class="opacity-70">
+        © {year} {site.legalName || site.name}
+        {site.footer.legal ? ` · ${site.footer.legal}` : ""}
+      </p>
+      <p class="opacity-50">
+        {site.footer.credit || "Rebuilt with Astro, Tailwind CSS and daisyUI."}
+      </p>
+    </div>
+
+    {addressLines().length > 0 && (
+      <p class="mt-1 text-xs opacity-40">{addressLines().join(" · ")}</p>
+    )}
+  </div>
+</footer>

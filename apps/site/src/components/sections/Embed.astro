@@ -1,0 +1,80 @@
+---
+import Section from "../Section.astro";
+import SectionHeading from "../SectionHeading.astro";
+import { slugify } from "../../utils/url";
+import type { SectionOf } from "./types";
+
+/**
+ * Responsive embed (video/map). Only https URLs from a small allowlist are
+ * embedded — a scraped page could otherwise inject any third-party frame.
+ */
+type Props = SectionOf<"embed">;
+
+const { eyebrow, heading, subheading, url, aspect = "video" } = Astro.props;
+
+const allowedHosts = [
+  "www.youtube.com",
+  "youtube.com",
+  "youtu.be",
+  "player.vimeo.com",
+  "vimeo.com",
+  "www.google.com",
+  "maps.google.com",
+  "www.openstreetmap.org",
+  "open.spotify.com",
+];
+
+function embedUrl(raw: string): string | null {
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "https:") return null;
+    if (!allowedHosts.includes(parsed.hostname)) return null;
+
+    // Normalise the usual YouTube watch/share links into the embed form.
+    if (/youtu\.be$/.test(parsed.hostname)) {
+      const id = parsed.pathname.slice(1);
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    if (parsed.hostname.endsWith("youtube.com") && parsed.searchParams.has("v")) {
+      return `https://www.youtube.com/embed/${parsed.searchParams.get("v")}`;
+    }
+    if (parsed.hostname.endsWith("vimeo.com") && !parsed.hostname.startsWith("player.")) {
+      const id = parsed.pathname.split("/").filter(Boolean)[0];
+      return id ? `https://player.vimeo.com/video/${id}` : null;
+    }
+    return parsed.href;
+  } catch {
+    return null;
+  }
+}
+
+const src = embedUrl(url);
+const aspectClass =
+  aspect === "square" ? "aspect-square" : aspect === "wide" ? "aspect-21/9" : "aspect-video";
+---
+
+{
+  src && (
+    <Section id={heading ? slugify(heading) : undefined} size="sm">
+      <SectionHeading
+        eyebrow={eyebrow}
+        heading={heading}
+        subheading={subheading}
+        align="center"
+      />
+      <div class="mx-auto mt-8 max-w-4xl">
+        <div class:list={["overflow-hidden rounded-box bg-base-200 shadow-card", aspectClass]}>
+          <iframe
+            src={src}
+            title={heading ?? "Embedded media"}
+            loading="lazy"
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"
+            class="size-full border-0"
+          />
+        </div>
+      </div>
+    </Section>
+  )
+}

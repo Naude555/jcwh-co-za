@@ -1,0 +1,142 @@
+---
+import Icon from "./Icon.astro";
+import Button from "./Button.astro";
+import SmartImage from "./SmartImage.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+import { site, logoText, hasLogo } from "../data/site";
+
+const nav = site.navigation.primary ?? [];
+const actions = site.navigation.actions ?? [];
+
+/** Compare link targets to the current path, ignoring trailing slashes. */
+const current = Astro.url.pathname.replace(/\/+$/, "") || "/";
+const isCurrent = (href: string) => (href.replace(/\/+$/, "") || "/") === current;
+---
+
+<header
+  class="sticky top-0 z-50 border-b border-base-300/60 bg-base-100/85 backdrop-blur-md"
+>
+  <div class="container-page flex h-16 items-center justify-between gap-4 lg:h-20">
+    <a
+      href="/"
+      class="flex items-center gap-2.5 font-display text-lg font-bold tracking-tight"
+      aria-label={`${site.name} — home`}
+    >
+      {
+        hasLogo() ? (
+          <SmartImage
+            src={site.logo.src}
+            alt={site.logo.alt || site.name}
+            width={150}
+            height={40}
+            class="h-8 w-auto lg:h-9"
+            priority
+          />
+        ) : (
+          <>
+            <span
+              class="grid size-9 place-items-center rounded-xl bg-primary text-primary-content"
+              aria-hidden="true"
+            >
+              {logoText().slice(0, 1)}
+            </span>
+            <span>{logoText()}</span>
+          </>
+        )
+      }
+    </a>
+
+    <nav class="hidden lg:block" aria-label="Main">
+      <ul class="menu menu-horizontal gap-1 px-1 font-medium">
+        {
+          nav.map((item) =>
+            item.children?.length ? (
+              <li>
+                <details>
+                  <summary>
+                    {item.label}
+                    <Icon name="chevron-down" size={16} />
+                  </summary>
+                  <ul class="menu dropdown-content z-50 mt-2 w-60 rounded-box bg-base-100 p-2 shadow-xl">
+                    {item.children.map((child) => (
+                      <li>
+                        <a href={child.href}>
+                          {child.label}
+                          {child.description && (
+                            <span class="block text-xs opacity-60">{child.description}</span>
+                          )}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              </li>
+            ) : (
+              <li>
+                <a href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined}>
+                  {item.label}
+                </a>
+              </li>
+            ),
+          )
+        }
+      </ul>
+    </nav>
+
+    <div class="flex items-center gap-1 lg:gap-2">
+      <ThemeToggle />
+
+      {
+        actions.length > 0 && (
+          <div class="hidden items-center gap-2 lg:flex">
+            {actions.map((action, index) => (
+              <Button
+                href={action.href}
+                style={index === 0 ? "primary" : "ghost"}
+                size="sm"
+                external={action.icon === "external"}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        )
+      }
+
+      {
+        nav.length > 0 && (
+          <details class="dropdown dropdown-end lg:hidden">
+            <summary class="btn btn-ghost btn-circle" aria-label="Open navigation menu">
+              <Icon name="menu" size={22} />
+            </summary>
+            <ul class="menu dropdown-content z-50 mt-2 w-72 rounded-box bg-base-100 p-2 shadow-xl">
+              {nav.map((item) => (
+                <li>
+                  <a href={item.href} aria-current={isCurrent(item.href) ? "page" : undefined}>
+                    {item.label}
+                  </a>
+                  {item.children?.length ? (
+                    <ul>
+                      {item.children.map((child) => (
+                        <li>
+                          <a href={child.href}>{child.label}</a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              ))}
+              {actions.map((action) => (
+                <li class="mt-1">
+                  <a href={action.href} class="btn btn-primary btn-sm">
+                    {action.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )
+      }
+    </div>
+  </div>
+</header>

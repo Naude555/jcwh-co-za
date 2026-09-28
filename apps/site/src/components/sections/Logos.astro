@@ -1,0 +1,38 @@
+---
+import Section from "../Section.astro";
+import SectionHeading from "../SectionHeading.astro";
+import SmartImage from "../SmartImage.astro";
+import type { SectionOf } from "./types";
+
+/**
+ * Client/accreditation logos. When the scraper could not download a logo file it
+ * falls back to the alt text as a wordmark, so the strip never renders empty
+ * boxes.
+ */
+type Props = SectionOf<"logos">;
+
+const { eyebrow, heading, subheading, items = [] } = Astro.props;
+---
+
+<Section tone="muted" size="sm">
+  <SectionHeading eyebrow={eyebrow} heading={heading} subheading={subheading} align="center" />
+
+  <ul class="mt-10 flex flex-wrap items-center justify-center gap-x-10 gap-y-6">
+    {
+      items.map((item) => (
+        <li class="opacity-70 transition-opacity hover:opacity-100">
+          {item.image ? (
+            <SmartImage
+              src={item.image.src}
+              alt={item.image.alt || item.name}
+              class="h-8 w-auto max-w-40 object-contain grayscale"
+              sizes="10rem"
+            />
+          ) : (
+            <span class="font-display text-lg font-semibold tracking-tight">{item.name}</span>
+          )}
+        </li>
+      ))
+    }
+  </ul>
+</Section>

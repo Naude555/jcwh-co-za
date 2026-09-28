@@ -1,0 +1,54 @@
+---
+import Icon, { type IconName } from "./Icon.astro";
+
+/**
+ * daisyUI button/link. Content data only stores a semantic style name, which is
+ * mapped here so authors never hand-write utility classes into content.
+ */
+interface Props {
+  href?: string;
+  style?: "primary" | "secondary" | "accent" | "neutral" | "outline" | "ghost" | "link";
+  size?: "sm" | "md" | "lg";
+  icon?: string;
+  iconPosition?: "start" | "end";
+  type?: "button" | "submit" | "reset";
+  external?: boolean;
+  class?: string;
+}
+
+const {
+  href,
+  style = "primary",
+  size = "md",
+  icon,
+  iconPosition = "end",
+  type = "button",
+  external = false,
+  class: className = "",
+} = Astro.props;
+
+const isExternal = external || /^https?:\/\//.test(href ?? "");
+const classes = `btn btn-${style} btn-${size}`;
+const iconName = icon as IconName | undefined;
+---
+
+{
+  href ? (
+    <a
+      href={href}
+      class:list={[classes, className]}
+      target={isExternal ? "_blank" : undefined}
+      rel={isExternal ? "noopener noreferrer" : undefined}
+    >
+      {iconName && iconPosition === "start" && <Icon name={iconName} size={18} />}
+      <slot />
+      {iconName && iconPosition === "end" && <Icon name={iconName} size={18} />}
+    </a>
+  ) : (
+    <button type={type} class:list={[classes, className]}>
+      {iconName && iconPosition === "start" && <Icon name={iconName} size={18} />}
+      <slot />
+      {iconName && iconPosition === "end" && <Icon name={iconName} size={18} />}
+    </button>
+  )
+}

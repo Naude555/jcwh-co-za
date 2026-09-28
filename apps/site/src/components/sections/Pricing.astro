@@ -1,0 +1,72 @@
+---
+import Section from "../Section.astro";
+import SectionHeading from "../SectionHeading.astro";
+import Button from "../Button.astro";
+import Icon from "../Icon.astro";
+import { slugify } from "../../utils/url";
+import type { SectionOf } from "./types";
+
+/** Plan/tier comparison. */
+type Props = SectionOf<"pricing">;
+
+const { eyebrow, heading, subheading, note, tiers = [] } = Astro.props;
+---
+
+<Section id={heading ? slugify(heading) : undefined} tone="muted">
+  <SectionHeading eyebrow={eyebrow} heading={heading} subheading={subheading} align="center" />
+
+  <ul class="mt-12 grid items-start gap-6 lg:grid-cols-3">
+    {
+      tiers.map((tier) => (
+        <li
+          class:list={[
+            "card card-border h-full bg-base-100 reveal-on-scroll",
+            tier.featured ? "border-primary shadow-lift lg:scale-[1.03]" : "border-base-300",
+          ]}
+        >
+          <div class="card-body gap-4">
+            {tier.featured && <span class="badge badge-primary badge-sm">Most popular</span>}
+
+            <h3 class="card-title">{tier.name}</h3>
+
+            {tier.description && <p class="text-sm opacity-70">{tier.description}</p>}
+
+            {tier.price && (
+              <p class="flex items-baseline gap-1">
+                <span class="font-display text-4xl font-bold">{tier.price}</span>
+                {tier.period && <span class="text-sm opacity-60">/ {tier.period}</span>}
+              </p>
+            )}
+
+            {tier.features.length > 0 && (
+              <ul class="mt-2 space-y-2 text-sm">
+                {tier.features.map((feature) => (
+                  <li class="flex items-start gap-2">
+                    <Icon name="check" size={18} class="mt-0.5 text-success" />
+                    <span class="opacity-80">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {tier.actions.length > 0 && (
+              <div class="card-actions mt-auto pt-4">
+                {tier.actions.map((action, index) => (
+                  <Button
+                    href={action.href}
+                    style={action.style ?? (tier.featured || index === 0 ? "primary" : "outline")}
+                    class="w-full"
+                  >
+                    {action.label}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+        </li>
+      ))
+    }
+  </ul>
+
+  {note && <p class="mt-8 text-center text-sm opacity-60">{note}</p>}
+</Section>

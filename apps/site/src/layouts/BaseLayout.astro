@@ -1,0 +1,147 @@
+---
+import { Font } from "astro:assets";
+import "../styles/global.css";
+import Header from "../components/Header.astro";
+import Footer from "../components/Footer.astro";
+import { site, absoluteUrl } from "../data/site";
+
+/**
+ * Base document shell: SEO metadata, structured data, the pre-paint theme
+ * script (so a dark-mode visitor never sees a white flash), the sticky header
+ * and the footer.
+ *
+ * TODO(design): this is the only file that knows about <html>, so rebranding
+ * starts here.
+ */
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  /** Path or absolute URL; defaults to the current path. */
+  canonical?: string;
+  noindex?: boolean;
+  type?: "website" | "article";
+  publishedTime?: Date;
+  modifiedTime?: Date;
+  /** Extra schema.org nodes to embed alongside the site defaults. */
+  structuredData?: Record<string, unknown> | Record<string, unknown>[];
+  bodyClass?: string;
+}
+
+const {
+  title,
+  description = site.description,
+  image,
+  canonical,
+  noindex = false,
+  type = "website",
+  publishedTime,
+  modifiedTime,
+  structuredData,
+  bodyClass = "",
+} = Astro.props;
+
+const pageTitle = title ? `${title} | ${site.name}` : `${site.name} — ${site.tagline}`;
+const canonicalUrl = canonical
+  ? absoluteUrl(canonical)
+  : new URL(Astro.url.pathname, site.url).href;
+const ogImage = image
+  ? absoluteUrl(image)
+  : site.logo.src
+    ? absoluteUrl(site.logo.src)
+    : undefined;
+
+const useRemoteFonts = import.meta.env.PUBLIC_REMOTE_FONTS !== "0";
+const light = site.theme.light;
+const dark = site.theme.dark;
+
+/* Applied before first paint; the toggle in the header only changes this state. */
+const themeInitScript = `(function(){try{var k="theme";var s=localStorage.getItem(k);var d=window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.dataset.theme=s||(d?"${dark}":"${light}");}catch(e){}})();`;
+
+const themeToggleScript = `(function(){var k="theme",r=document.documentElement,L="${light}",D="${dark}";var b=document.querySelectorAll("[data-theme-toggle]");function sync(){var dark=r.dataset.theme===D;b.forEach(function(t){t.setAttribute("aria-pressed",String(dark));t.setAttribute("aria-label",dark?"Switch to light theme":"Switch to dark theme");});}b.forEach(function(t){t.addEventListener("click",function(){var n=r.dataset.theme===D?L:D;r.dataset.theme=n;try{localStorage.setItem(k,n);}catch(e){}sync();});});sync();})();`;
+
+const defaultSchema = [
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: site.name,
+    url: site.url,
+    description: site.description,
+    inLanguage: site.locale,
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: site.legalName || site.name,
+    url: site.url,
+    ...(site.logo.src ? { logo: absoluteUrl(site.logo.src) } : {}),
+    ...(site.contact.email ? { email: site.contact.email } : {}),
+    ...(site.contact.phone ? { telephone: site.contact.phone } : {}),
+    ...(site.socials.length ? { sameAs: site.socials.map((social) => social.href) } : {}),
+  },
+];
+
+const schema = [...defaultSchema, ...(structuredData ? [structuredData].flat() : [])];
+---
+
+<!doctype html>
+<html lang={site.locale} data-theme={light}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="color-scheme" content="light dark" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:locale" content={site.locale} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+    {publishedTime && (
+      <meta property="article:published_time" content={publishedTime.toISOString()} />
+    )}
+    {modifiedTime && (
+      <meta property="article:modified_time" content={modifiedTime.toISOString()} />
+    )}
+
+    <meta name="twitter:card" content={ogImage ? "summary_large_image" : "summary"} />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    {ogImage && <meta name="twitter:image" content={ogImage} />}
+
+    {useRemoteFonts && <Font cssVariable="--font-heading" preload />}
+    {useRemoteFonts && <Font cssVariable="--font-body" />}
+
+    <script is:inline set:html={themeInitScript} />
+    {
+      schema.map((node) => (
+        <script type="application/ld+json" set:html={JSON.stringify(node)} />
+      ))
+    }
+  </head>
+
+  <body class:list={[bodyClass]}>
+    <a
+      href="#main"
+      class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-100 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-content"
+    >
+      Skip to content
+    </a>
+
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+
+    <script is:inline set:html={themeToggleScript} />
+  </body>
+</html>

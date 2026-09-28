@@ -1,0 +1,147 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Section from "../../components/Section.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import SmartImage from "../../components/SmartImage.astro";
+import Icon, { type IconName } from "../../components/Icon.astro";
+import Breadcrumbs from "../../components/Breadcrumbs.astro";
+import SectionRenderer from "../../components/SectionRenderer.astro";
+import { absoluteUrl } from "../../data/site";
+
+export async function getStaticPaths() {
+  const services = await getCollection("services", ({ data }) => !data.draft);
+  return services.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { data } = entry;
+const { Content } = await render(entry);
+
+const others = (
+  await getCollection("services", ({ data: other, id }) => !other.draft && id !== entry.id)
+)
+  .sort((a, b) => a.data.order - b.data.order)
+  .slice(0, 3);
+
+const primaryAction = data.price?.startsWith("http")
+  ? { label: data.price, href: data.price }
+  : { label: "Request a quote", href: "/contact" };
+---
+
+<BaseLayout
+  title={data.seo?.title ?? data.title}
+  description={data.seo?.description ?? data.summary}
+  image={data.seo?.image ?? data.image?.src}
+  noindex={data.seo?.noindex || data.draft}
+  canonical={`/services/${entry.id}`}
+  structuredData={{
+    "@type": "Service",
+    name: data.title,
+    description: data.summary,
+    url: absoluteUrl(`/services/${entry.id}`),
+    ...(data.price && !data.price.startsWith("http")
+      ? { offers: { "@type": "Offer", price: data.price } }
+      : {}),
+  }}
+>
+  <Section>
+    <div class="grid items-center gap-12 lg:grid-cols-2">
+      <div>
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Services", href: "/services" },
+            { label: data.title },
+          ]}
+        />
+
+        <span class="mt-6 grid size-12 place-items-center rounded-xl bg-primary/10 text-primary">
+          <Icon name={(data.icon ?? "sparkles") as IconName} size={24} />
+        </span>
+
+        <SectionHeading heading={data.title} subheading={data.summary} as="h1" size="lg" class="mt-5" />
+
+        {data.price && <p class="mt-4 text-lg font-semibold text-primary">{data.price}</p>}
+
+        <div class="mt-8 flex flex-wrap gap-3">
+          <a href={primaryAction.href} class="btn btn-primary btn-lg">
+            {primaryAction.label} <Icon name="arrow-right" size={18} />
+          </a>
+          <a href="/contact" class="btn btn-ghost btn-lg">Book a call</a>
+        </div>
+      </div>
+
+      {
+        data.image && (
+          <SmartImage
+            src={data.image.src}
+            alt={data.image.alt || data.title}
+            class="w-full rounded-box shadow-card"
+            sizes="(min-width: 1024px) 36rem, 100vw"
+            priority
+          />
+        )
+      }
+    </div>
+  </Section>
+
+  {
+    data.highlights.length > 0 && (
+      <Section tone="muted" size="sm">
+        <SectionHeading heading="What is included" align="center" />
+        <ul class="mt-8 grid gap-4 sm:grid-cols-2">
+          {data.highlights.map((highlight) => (
+            <li class="flex items-start gap-3 rounded-box bg-base-100 p-4">
+              <Icon name="check-circle" size={20} class="mt-0.5 text-success" />
+              <span class="opacity-80">{highlight}</span>
+            </li>
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+
+  {
+    entry.body?.trim() && (
+      <Section>
+        <article class="prose prose-brand mx-auto max-w-3xl">
+          <Content />
+        </article>
+      </Section>
+    )
+  }
+
+  {
+    data.faqs.length > 0 && (
+      <SectionRenderer
+        sections={[{ type: "faq", heading: "Frequently asked questions", items: data.faqs }]}
+      />
+    )
+  }
+
+  {
+    others.length > 0 && (
+      <Section tone="muted" size="sm">
+        <SectionHeading heading="Other services" />
+        <ul class="mt-8 grid gap-6 md:grid-cols-3">
+          {others.map((other) => (
+            <li class="card card-border border-base-300 bg-base-100 card-interactive">
+              <div class="card-body gap-2">
+                <h3 class="card-title text-base">
+                  <a href={`/services/${other.id}`} class="link-underline">
+                    {other.data.title}
+                  </a>
+                </h3>
+                <p class="text-sm opacity-70">{other.data.summary}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </Section>
+    )
+  }
+</BaseLayout>

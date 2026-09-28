@@ -1,0 +1,81 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import Section from "../../components/Section.astro";
+import SectionHeading from "../../components/SectionHeading.astro";
+import SmartImage from "../../components/SmartImage.astro";
+import Icon, { type IconName } from "../../components/Icon.astro";
+import { absoluteUrl } from "../../data/site";
+
+const services = (
+  await getCollection("services", ({ data }) => !data.draft)
+).sort((a, b) => a.data.order - b.data.order || a.data.title.localeCompare(b.data.title));
+---
+
+<BaseLayout
+  title="Services"
+  description="What we do, in detail."
+  structuredData={{
+    "@type": "CollectionPage",
+    name: "Services",
+    url: absoluteUrl("/services"),
+  }}
+>
+  <Section>
+    <SectionHeading
+      eyebrow="Services"
+      heading="What we do"
+      subheading="Pick a service to see how it works, what it costs and what you get."
+      size="lg"
+      as="h1"
+    />
+
+    {
+      services.length === 0 && (
+        <p class="mt-10 opacity-70">
+          No services yet. Scraped service pages land in <code>src/content/services/</code>.
+        </p>
+      )
+    }
+
+    <ul class="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {
+        services.map((service) => (
+          <li class="card card-border h-full border-base-300 bg-base-100 card-interactive">
+            {service.data.image && (
+              <figure>
+                <SmartImage
+                  src={service.data.image.src}
+                  alt={service.data.image.alt || service.data.title}
+                  class="aspect-16/9 w-full object-cover"
+                  sizes="(min-width: 1024px) 22rem, 90vw"
+                />
+              </figure>
+            )}
+            <div class="card-body gap-3">
+              <span class="grid size-11 place-items-center rounded-xl bg-primary/10 text-primary">
+                <Icon name={(service.data.icon ?? "sparkles") as IconName} size={22} />
+              </span>
+              <h2 class="card-title text-lg">
+                <a href={`/services/${service.id}`} class="link-underline">
+                  {service.data.title}
+                </a>
+              </h2>
+              <p class="text-sm opacity-70">{service.data.summary}</p>
+
+              {service.data.price && (
+                <p class="mt-1 text-sm font-semibold text-primary">{service.data.price}</p>
+              )}
+
+              <div class="card-actions mt-auto pt-3">
+                <a href={`/services/${service.id}`} class="btn btn-ghost btn-sm">
+                  Learn more <Icon name="arrow-right" size={16} />
+                </a>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </Section>
+</BaseLayout>
