@@ -34,8 +34,10 @@
 
   /* Layout */
   --container-page: 78rem;
-  --spacing-section: 5rem;
-  --spacing-section-lg: 7.5rem;
+  /* Section rhythm. Adjacent sections *add up*, so these stay modest: a hero
+     (lg) above a content section is 4.5rem + 3.5rem of padding, not 200px of air. */
+  --spacing-section: 3.5rem;
+  --spacing-section-lg: 4.5rem;
 
   /* Surfaces */
   --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.04), 0 12px 32px -16px oklch(0% 0 0 / 0.16);

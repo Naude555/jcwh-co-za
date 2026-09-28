@@ -34,7 +34,7 @@ const fallbackEmail = contactDetails().find((detail) => detail.icon === "mail")?
 <Section id={heading ? slugify(heading) : "contact"}>
   <SectionHeading eyebrow={eyebrow} heading={heading} subheading={subheading} />
 
-  <div class="mt-10 grid gap-12 lg:grid-cols-2">
+  <div class="mt-8 grid gap-10 lg:grid-cols-2">
     <div>
       {body && <p class="mb-8 max-w-prose opacity-75">{body}</p>}
 

@@ -38,7 +38,7 @@ const isOverlay = variant === "overlay" && Boolean(image);
     )
   }
 
-  <div class:list={["grid items-center gap-12", variant === "split" && image ? "lg:grid-cols-2" : ""]}>
+  <div class:list={["grid items-center gap-10", variant === "split" && image ? "lg:grid-cols-2" : ""]}>
     <div class:list={[isCentered && "mx-auto max-w-3xl text-center", isOverlay && "text-neutral-content"]}>
       <SectionHeading
         eyebrow={eyebrow}

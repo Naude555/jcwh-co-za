@@ -32,7 +32,7 @@ const colClass =
 <Section id={heading ? slugify(heading) : undefined}>
   <SectionHeading eyebrow={eyebrow} heading={heading} subheading={subheading} align="center" />
 
-  <ul class:list={["mt-12 grid gap-4", colClass]}>
+  <ul class:list={["mt-8 grid gap-4", colClass]}>
     {
       images.map((image, index) => {
         const alt = image.alt || `${heading ?? "Gallery image"} ${index + 1}`;
@@ -64,7 +64,7 @@ const colClass =
 
   {
     actions.length > 0 && (
-      <div class="mt-10 flex flex-wrap justify-center gap-3">
+      <div class="mt-8 flex flex-wrap justify-center gap-3">
         {actions.map((action, index) => (
           <Button
             href={action.href}

@@ -1,20 +1,20 @@
 {
-  "name": "JC Wendy Houses",
-  "legalName": "",
-  "tagline": "Welcome to JC Wendy Houses Online",
-  "description": "Welcome to JC Wendy Houses Online",
-  "url": "https://www.jcwh.co.za/index.html",
+  "name": "Your Company",
+  "legalName": "Your Company Ltd.",
+  "tagline": "Modern websites, built to last",
+  "description": "A fast, accessible, search-friendly website rebuilt with Astro, Tailwind CSS and daisyUI.",
+  "url": "https://example.com",
   "locale": "en",
   "logo": {
-    "src": "assets/images/logo.svg",
-    "alt": "JC Wendy Houses logo",
-    "text": "JC Wendy Houses"
+    "src": "",
+    "alt": "Your Company logo",
+    "text": "Your Company"
   },
   "contact": {
-    "email": "jcwh@mweb.co.za",
-    "phone": "(021) 905-8335",
+    "email": "hello@example.com",
+    "phone": "",
     "address": {
-      "street": "PO Box 963, Kuilsrivier 7580, South Africa",
+      "street": "",
       "city": "",
       "region": "",
       "postalCode": "",
@@ -24,73 +24,25 @@
   },
   "socials": [],
   "navigation": {
-    "primary": [
-      {
-        "label": "Home",
-        "href": "/"
-      },
-      {
-        "label": "Catalogue",
-        "href": "/cat"
-      },
-      {
-        "label": "Gallery",
-        "href": "/gallery"
-      },
-      {
-        "label": "Contact Us",
-        "href": "/contact"
-      }
-    ],
-    "actions": [
-      {
-        "label": "Contact",
-        "href": "/contact"
-      }
-    ],
+    "primary": [{ "label": "Home", "href": "/" }],
+    "actions": [],
     "footer": []
   },
   "footer": {
     "tagline": "",
     "columns": [],
     "legal": "",
-    "credit": "Built by eptsolution.com",
-    "creditUrl": "https://eptsolution.com"
+    "credit": ""
   },
   "theme": {
-    "mode": "light",
     "light": "brand",
     "dark": "brand-dark",
-    "fonts": {
-      "heading": "Georgia",
-      "body": "Georgia"
-    },
-    "palette": {
-      "base-100": "oklch(100% 0.0029 63.3)",
-      "base-200": "oklch(90% 0.0748 83.4)",
-      "base-300": "oklch(84.5% 0.0598 83.4)",
-      "base-content": "oklch(22% 0.0004 63.3)",
-      "primary": "oklch(41.4% 0.0727 63.3)",
-      "primary-content": "oklch(98.5% 0.0073 63.3)",
-      "secondary": "oklch(41.4% 0.0727 123.3)",
-      "secondary-content": "oklch(98.5% 0.0073 123.3)",
-      "accent": "oklch(41.4% 0.0727 353.3)",
-      "accent-content": "oklch(98.5% 0.0073 353.3)",
-      "neutral": "oklch(20% 0 63.3)",
-      "neutral-content": "oklch(98.5% 0 63.3)",
-      "info": "oklch(62% 0.16 240)",
-      "info-content": "oklch(22% 0.02 240)",
-      "success": "oklch(62% 0.16 150)",
-      "success-content": "oklch(22% 0.02 150)",
-      "warning": "oklch(79% 0.16 80)",
-      "warning-content": "oklch(22% 0.02 80)",
-      "error": "oklch(62% 0.16 25)",
-      "error-content": "oklch(22% 0.02 25)"
-    }
+    "fonts": { "heading": "Plus Jakarta Sans", "body": "Inter" },
+    "palette": {}
   },
   "source": {
-    "url": "https://www.jcwh.co.za/index.html",
-    "scrapedAt": "2026-09-28T09:01:18.217Z",
-    "pagesMigrated": 23
+    "url": "",
+    "scrapedAt": null,
+    "pagesMigrated": 0
   }
 }

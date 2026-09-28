@@ -4,8 +4,8 @@
   "client": "JC Wendy Houses",
   "sourceUrl": "https://www.jcwh.co.za/index.html",
   "base": {
-    "version": "0.2.0",
-    "tag": "base-v0.2.0"
+    "version": "0.2.1",
+    "tag": "base-v0.2.1"
   },
   "status": "reviewed",
   "deployTarget": "",
