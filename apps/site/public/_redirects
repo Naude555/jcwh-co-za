@@ -1,0 +1,26 @@
+# Redirects for URLs that changed shape during the rebuild.
+# Netlify and Cloudflare Pages read this file from the published directory.
+
+/index.html  /  301
+/cat.html  /cat  301
+/contact.html  /contact  301
+/gallery.html  /gallery  301
+/p1.html  /gallery  301
+/p2.html  /gallery  301
+/p3.html  /gallery  301
+/p4.html  /gallery  301
+/p5.html  /gallery  301
+/p6.html  /gallery  301
+/p7.html  /gallery  301
+/p8.html  /gallery  301
+/p9.html  /gallery  301
+/p10.html  /gallery  301
+/p12.html  /gallery  301
+/p11.html  /gallery  301
+/p13.html  /gallery  301
+/p15.html  /gallery  301
+/p16.html  /gallery  301
+/p18.html  /gallery  301
+/p19.html  /gallery  301
+/p17.html  /gallery  301
+/p20.html  /gallery  301

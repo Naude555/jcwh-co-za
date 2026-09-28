@@ -53,7 +53,8 @@ async function main(): Promise<void> {
   const server = await startFixtureServer();
   const root = join(tmpdir(), `jcwh-scraper-test-${Date.now()}`);
   const outDir = join(root, "output");
-  const siteDir = join(root, "site");
+  // Mirror the real layout (`<repo>/apps/site`) so repo-relative paths resolve.
+  const siteDir = join(root, "apps/site");
 
   await makeSiteDirs(siteDir);
 
@@ -281,7 +282,16 @@ async function main(): Promise<void> {
 
   /* ---- Redirects and report ------------------------------------------- */
   check("redirects cover the .html URLs", result.redirects >= 4, String(result.redirects));
-  check("_redirects file written", await exists(join(outDir, "_redirects")));
+  check(
+    "_redirects ships with the build (public/)",
+    await exists(join(siteDir, "public/_redirects")),
+    join(siteDir, "public/_redirects"),
+  );
+  check(
+    "nginx redirect rules are generated for the Docker deploy",
+    await exists(join(root, "deploy/nginx-redirects.conf")),
+    join(root, "deploy/nginx-redirects.conf"),
+  );
 
   const report = JSON.parse(await readFile(join(outDir, "report.json"), "utf8")) as {
     pages: unknown[];
@@ -296,7 +306,7 @@ async function main(): Promise<void> {
     ...options,
     url: legacyServer.url,
     outDir: join(root, "legacy/output"),
-    siteDir: join(root, "legacy/site"),
+    siteDir: join(root, "legacy/apps/site"),
     // Exercise the optional gallery folding: a home page teaser plus stubs 301'd
     // into the gallery.
     foldGalleries: true,

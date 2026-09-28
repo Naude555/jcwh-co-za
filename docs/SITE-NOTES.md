@@ -143,6 +143,45 @@ See `docs/WORKFLOW.md` for the full list. Record the date each gate passed:
 - [ ] Technical QA (links, images, metadata, a11y) — date:
 - [ ] Client sign-off — date:
 
+## Deploying (Coolify)
+
+Repository: add one as `origin` and push — `upstream` stays the base template.
+
+```bash
+git remote add origin git@github.com:<org>/jcwh-co-za.git
+git push -u origin main
+```
+
+Coolify: **New Resource → Application → the repository**, then:
+
+- **Build Pack: Dockerfile** (the repo ships one: Node build stage, then nginx), port **80**
+- **Build variables** (read at build time — they land in canonical URLs, the sitemap
+  and robots.txt):
+  - `PUBLIC_SITE_URL` = `https://jcwh.eptsolution.com`
+  - `PUBLIC_PREVIEW` = `1` — a demo, so Google ignores it. Set to `0` when it goes live.
+- **Domains**: `https://jcwh.eptsolution.com`, HTTPS on
+- **DNS**: `CNAME` for `jcwh` → the Coolify host (or an `A` record to its IP)
+
+Generated for the deploy:
+
+- `apps/site/public/_redirects` — 23 × 301, Netlify/Cloudflare format, ships in the build
+- `deploy/nginx-redirects.conf` — the same 23 rules as nginx `location` blocks,
+  included by `deploy/nginx-site.conf` inside the image (nginx ignores `_redirects`)
+
+Verified locally before pushing:
+
+```bash
+docker build -t jcwh-preview \
+  --build-arg PUBLIC_SITE_URL=https://jcwh.eptsolution.com \
+  --build-arg PUBLIC_PREVIEW=1 .
+docker run -d --name jcwh-test -p 8080:80 jcwh-preview   # http://localhost:8080
+```
+
+Result: home 200 and noindex, canonical + robots point at the preview subdomain, all
+23 old URLs 301 correctly (`/p1.html` → `/gallery`), clean URLs serve with and
+without a trailing slash, unknown URLs return a real 404, hashed assets cached
+immutably.
+
 ## Launch
 
 - Deployed to:

@@ -58,6 +58,9 @@ const ogImage = image
     : undefined;
 
 const useRemoteFonts = import.meta.env.PUBLIC_REMOTE_FONTS !== "0";
+/* A preview deployment (PUBLIC_PREVIEW=1) is kept out of search results, so a
+   client demo on a subdomain cannot compete with their live site. */
+const preview = import.meta.env.PUBLIC_PREVIEW === "1";
 const light = site.theme.light;
 const dark = site.theme.dark;
 const isLightOnly = lightOnly();
@@ -111,7 +114,7 @@ const schema = [...defaultSchema, ...(structuredData ? [structuredData].flat() :
     <title>{pageTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonicalUrl} />
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {(noindex || preview) && <meta name="robots" content="noindex, nofollow" />}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

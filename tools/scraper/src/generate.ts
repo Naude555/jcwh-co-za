@@ -1,5 +1,5 @@
 import { rm } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { stringify as toYaml } from "yaml";
 import type { ChromeData, CrawlResult } from "./crawl.ts";
 import type { Options } from "./config.ts";
@@ -347,19 +347,40 @@ const template =
   return counts;
 }
 
-/** Netlify/Cloudflare Pages style redirect file, plus the raw JSON. */
-async function writeRedirects(outDir: string, redirects: RedirectRecord[]): Promise<void> {
-  await writeJson(`${outDir}/redirects.json`, redirects);
+/**
+ * Redirect files for every host we deploy to.
+ *
+ * `_redirects` is written into the app's `public/` so it ships with the build for
+ * Netlify and Cloudflare Pages, and an nginx snippet is written to `deploy/`
+ * because nginx — which is what Coolify serves a static build with — does not read
+ * `_redirects` at all. The raw JSON stays in the crawl output for tooling.
+ */
+async function writeRedirects(options: Options, redirects: RedirectRecord[]): Promise<void> {
+  await writeJson(join(options.outDir, "redirects.json"), redirects);
 
-  const body = [
-    "# Redirects for URLs that changed shape during the rebuild.",
-    "# Deploy as-is on Netlify/Cloudflare Pages, or translate into your host's rules.",
-    "",
-    ...redirects.map((entry) => `${entry.from}  ${entry.to}  301`),
-    "",
-  ].join("\n");
+  await writeText(
+    join(options.siteDir, "public", "_redirects"),
+    [
+      "# Redirects for URLs that changed shape during the rebuild.",
+      "# Netlify and Cloudflare Pages read this file from the published directory.",
+      "",
+      ...redirects.map((entry) => `${entry.from}  ${entry.to}  301`),
+      "",
+    ].join("\n"),
+  );
 
-  await writeText(`${outDir}/_redirects`, body);
+  // `apps/site` -> the site repository root, where deployment files live.
+  const repoRoot = resolve(options.siteDir, "..", "..");
+  await writeText(
+    join(repoRoot, "deploy", "nginx-redirects.conf"),
+    [
+      "# Redirects for URLs that changed shape in the rebuild.",
+      "# Included inside the server block by the Dockerfile — see docs/WORKFLOW.md.",
+      "",
+      ...redirects.map((entry) => `location = ${entry.from} { return 301 ${entry.to}; }`),
+      "",
+    ].join("\n"),
+  );
 }
 
 /* -------------------------------------------------------------------------- *
@@ -471,7 +492,7 @@ export async function generateSite(
   );
 
   const redirects = buildRedirects(crawl, retired);
-  await writeRedirects(options.outDir, redirects);
+  await writeRedirects(options, redirects);
 
   const finishedAt = Date.now();
   const report: MigrationReport = {

@@ -1,0 +1,9 @@
+# Keep the build context small: dependencies and build output are produced inside
+# the image (or exist locally already).
+node_modules
+**/node_modules
+apps/site/dist
+apps/site/.astro
+tools/scraper/output
+.git
+.env

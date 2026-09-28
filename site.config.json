@@ -4,13 +4,22 @@
   "client": "JC Wendy Houses",
   "sourceUrl": "https://www.jcwh.co.za/index.html",
   "base": {
-    "version": "0.2.1",
-    "tag": "base-v0.2.1"
+    "version": "0.2.2",
+    "tag": "base-v0.2.2"
   },
   "status": "reviewed",
   "deployTarget": "",
   "notes": "Tooling synced to base-v0.1.1 after the first crawl exposed legacy-markup gaps.",
   "runs": [
+    {
+      "at": "2026-09-28T10:37:59.363Z",
+      "command": "generate",
+      "status": "generated",
+      "pages": 4,
+      "posts": 0,
+      "services": 0,
+      "redirects": 23
+    },
     {
       "at": "2026-09-28T10:19:54.087Z",
       "command": "generate",
@@ -157,12 +166,6 @@
       "posts": 0,
       "services": 0,
       "redirects": 23
-    },
-    {
-      "at": "2026-09-28T07:22:03.337Z",
-      "command": "modernize",
-      "status": "crawled",
-      "pages": 23
     }
   ]
 }
