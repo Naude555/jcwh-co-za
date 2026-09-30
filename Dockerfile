@@ -6,6 +6,12 @@
 #   PUBLIC_SITE_URL   https://jcwh.eptsolution.com   canonical URLs + sitemap
 #   PUBLIC_PREVIEW    1                              noindex + robots Disallow: /
 #
+#   PUBLIC_UMAMI_SRC         https://cloud.umami.is/script.js
+#   PUBLIC_UMAMI_WEBSITE_ID  <the website's id>       analytics; blank = no tag
+#
+# PUBLIC_UMAMI_DOMAINS, PUBLIC_UMAMI_HOST_URL and PUBLIC_UMAMI_DO_NOT_TRACK are
+# optional and declared below as well.
+#
 # See docs/WORKFLOW.md ("Deploying") for the deployment runbook.
 
 FROM node:24-alpine AS build
@@ -21,6 +27,11 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 ARG PUBLIC_SITE_URL
 ARG PUBLIC_PREVIEW
+ARG PUBLIC_UMAMI_SRC
+ARG PUBLIC_UMAMI_WEBSITE_ID
+ARG PUBLIC_UMAMI_DOMAINS
+ARG PUBLIC_UMAMI_HOST_URL
+ARG PUBLIC_UMAMI_DO_NOT_TRACK
 RUN pnpm build
 
 FROM nginx:1.27-alpine AS serve

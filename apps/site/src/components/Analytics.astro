@@ -1,0 +1,59 @@
+---
+/**
+ * Umami analytics, rendered only when the site has been given the two values that
+ * switch it on. They are exactly the two values in the Umami snippet, so turning a
+ * site on is a copy-and-paste into that site's `.env` (or into Coolify's build
+ * variables) — no code change, and nothing assumed about where Umami runs:
+ *
+ *   PUBLIC_UMAMI_SRC=https://cloud.umami.is/script.js     (or your own /script.js)
+ *   PUBLIC_UMAMI_WEBSITE_ID=00000000-0000-0000-0000-000000000000
+ *
+ * With either one blank the tag is not written at all, so a site that has not been
+ * given a website id ships the same HTML it did before and sends nothing anywhere.
+ *
+ * Optional:
+ *   PUBLIC_UMAMI_DOMAINS=acme.example,www.acme.example
+ *       Only these hostnames are counted. This is how a demo subdomain is kept out
+ *       of the client's statistics without turning the tag off on it.
+ *   PUBLIC_UMAMI_HOST_URL=https://analytics.example.com
+ *       Only when the script is served from one host and the API lives on another.
+ *   PUBLIC_UMAMI_DO_NOT_TRACK=1
+ *       Respect the browser's Do Not Track / Global Privacy Control signal.
+ */
+const src = (import.meta.env.PUBLIC_UMAMI_SRC ?? "").trim();
+const websiteId = (import.meta.env.PUBLIC_UMAMI_WEBSITE_ID ?? "").trim();
+const domains = (import.meta.env.PUBLIC_UMAMI_DOMAINS ?? "").trim();
+const hostUrl = (import.meta.env.PUBLIC_UMAMI_HOST_URL ?? "").trim();
+const doNotTrack = import.meta.env.PUBLIC_UMAMI_DO_NOT_TRACK === "1";
+
+/* Half-configured is the one thing worth complaining about: a typo in either name
+   would otherwise leave a site that is meant to be measured sending nothing, with
+   no sign of it in the build output. */
+if (websiteId && !src) {
+  console.warn(
+    "Analytics: PUBLIC_UMAMI_WEBSITE_ID is set but PUBLIC_UMAMI_SRC is not, so no " +
+      "analytics tag was written (set it to https://cloud.umami.is/script.js or to " +
+      "your own Umami's /script.js).",
+  );
+}
+if (src && !websiteId) {
+  console.warn(
+    "Analytics: PUBLIC_UMAMI_SRC is set but PUBLIC_UMAMI_WEBSITE_ID is not, so no " +
+      "analytics tag was written.",
+  );
+}
+---
+
+{
+  src && websiteId && (
+    <script
+      is:inline
+      defer
+      src={src}
+      data-website-id={websiteId}
+      data-domains={domains || undefined}
+      data-host-url={hostUrl || undefined}
+      data-do-not-track={doNotTrack ? "true" : undefined}
+    />
+  )
+}
